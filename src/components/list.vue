@@ -10,51 +10,6 @@ Vue.component('friendApply', function (resolve) {
     require(['./friendsApply'], resolve);
 });
 
-
-// Vue.component('friend-list', {
-//     template: '<div><div @click="open(index)"><i class="iconfont-chat" >{{ openFun? "&#xe720;":"&#xe62e;" }}</i><p class="list-name">{{ item.groupname }}</p><span :class="{newFriendNum: item.id == 1, friendsNum: item.id != 1}" :d="item.id" v-if="item.id == 1 ? newFriendNum : item.list.length">{{ item.id==1 ? newFriendNum : item.list.length }}</span></div>\
-//                 <ul v-if="openFun">\
-//                      <li v-for="list in item.list" @click="selectSession(list.id, \'message\', list.username, list.avatar, item.id, list )" :class="{ active: list.id === currentId }">\
-//                          <img :src="list.avatar" alt="" width="40" height="40">\
-//                         <p class="name" style=" display: inline-block;font-size: 18px;margin: 0;width: 125px;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;">{{ list.username }}</p>\
-//                         <i v-if="list.state == 1" class="friendNew"></i>\
-//                         <span v-if="item.id == 1" class="friendApply">{{ list.state == 1 ? "等待验证":"好友申请" }}</span>\
-//                     </li>\
-//                     <li v-if="item.list.length == 0">没有数据！</li>\
-//                 </ul></div>',
-//     props:['item', 'index', 'currentId'],
-//     data () {
-//         return {
-//             openFun: false,
-//         }
-//     },
-//     computed: {
-//         newFriendNum: function () {
-//             let num = 0;
-//             for (let i in this.item.list ) {
-//                 if ( this.item.list[i].state == 1 ) {
-//                     num++;
-//                 }
-//             }
-//             return num;
-//         }
-//     },
-//     methods: {
-//         open: function (index) {
-//             this.openFun = !this.openFun;
-//         },
-//          selectSession (id, type, name, img, itemId, list) {
-//             if ( itemId == 1 ) {
-//                 this.$emit('friendsApple', list.id, list.state);
-//                 return false;
-//             }
-//             this.$emit('fmainShow');
-//             let data = {id: id, type: type, name: name, img: img};
-//             this.$store.dispatch('selectSession', data);
-//         },
-//     }
-// });
-
 export default {
     data  () {
         return {
@@ -116,6 +71,11 @@ export default {
             this.friendApplyShow = true;
             this.friendApplyId = uid;
             this.friendsApplyState = state;
+        },
+        perInfo (type) {
+            if ( type == 'message' ) {
+                this.$emit('perInfoShow');
+            }
         }
     },
     filters: {
@@ -221,8 +181,8 @@ Vue.directive('oncontextmenu', {
                 <p class="search-list-name">{{ items.name }}</p>
                 <ul  class="search-list" v-if="items.list.length">
                     <li v-if="items.list" v-for="item in items.list" :class="{ active: item.id === currentId }" @click="searchSelectSession(item.id, 'message', item.username, item.avatar, items.name)">
-                        <div class="icon-avatar">
-                            <img class="avatar"  width="40" height="40" :alt="item.username" :src="'' + item.avatar">
+                        <div class="icon-avatar" @click="perInfo(item.type)">
+                            <img class="avatar"  width="48" height="48" :alt="item.username" :src="'' + item.avatar">
                         </div>
                         <div>
                             <p class="name">{{item.username}}</p>
@@ -249,7 +209,7 @@ Vue.directive('oncontextmenu', {
             <li v-for="(item, index) in sessions"
             :class="{ active: item.id === currentId }" @click="selectSession(item.id, item.type, item.user.name, item.user.img)"  @mousedown.3 ="mousedown(item, index, $event)">
             <div class="list-info">
-                <div class="icon-avatar">
+                <div class="icon-avatar" @click="perInfo(item.type)">
                     <img class="avatar"  width="48" height="48" :alt="item.user.name" :src="item.user.img">
                 </div>
                 <div class="list-text">
@@ -314,7 +274,7 @@ Vue.directive('oncontextmenu', {
             position:relative;
             padding: 12px;
             &.active {
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(255, 255, 255, 0.9);
         }
             ul {
                 li {
@@ -347,7 +307,7 @@ Vue.directive('oncontextmenu', {
             line-height: 20px;
             border-radius: 20px;
             background-color: #d32f2f;
-            color: #fff;
+            color: #000;
             text-align: center;
             right: 20px;
             /* right: 10px; */
@@ -382,10 +342,12 @@ Vue.directive('oncontextmenu', {
     .chat-friend-list {
         position: relative;
         p.list-name {
+                color: #000;
                 padding: 0px 0 0px 25px;
                 margin: 14px 0;
         }
         i {
+            color: #000;
             padding: 10px 5px;
             position: absolute;
             top: 4px;
@@ -394,7 +356,7 @@ Vue.directive('oncontextmenu', {
             position:relative;
             padding: 12px;
             &.active {
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(255, 255, 255, 0.9);
         }
             ul {
                 li {
@@ -440,7 +402,7 @@ Vue.directive('oncontextmenu', {
             line-height: 20px;
             border-radius: 20px;
             background-color: #d32f2f;
-            color: #fff;
+            color: #000;
             text-align: center;
             right: 20px;
             /* right: 10px; */
@@ -451,7 +413,7 @@ Vue.directive('oncontextmenu', {
             position: absolute;
             display: line-block;
             line-height: 20px;
-            color: #fff;
+            color: #000;
             text-align: center;
             right: 20px;
             /* right: 10px; */
@@ -512,6 +474,7 @@ Vue.directive('oncontextmenu', {
     }
     .group-list, .search {
         li {
+            border-top: 1px solid #ccc;
             padding:12px;
         }
     }
@@ -525,14 +488,6 @@ Vue.directive('oncontextmenu', {
             line-height: 40px;
         }
     }
-    .icon-avatar {
-            position: relative;
-            float: left;
-            width: 48px;
-            height: 48px;
-            margin-right: 10px;
-            /* background: #d6d5d3; */
-        }
     .group-list,.friend-list {
         li {
             
@@ -584,7 +539,17 @@ Vue.directive('oncontextmenu', {
             padding-left: 15px;
         }
     }
-    .search { 
+    .search {
+        .search-list {
+            .icon-avatar {
+                position: relative;
+                float: left;
+                width: 57px;
+                height: 57px;
+                margin-right: 10px;
+                border: 4px solid #fff;
+            }
+        } 
         .search-list-name {
             padding-left: 10px;
             background-color: #868686;
@@ -624,10 +589,7 @@ Vue.directive('oncontextmenu', {
     }
     li {
        
-        
-        &.active {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
+       
         .message-num {
             position: absolute;
             display: line-block;
@@ -656,10 +618,10 @@ Vue.directive('oncontextmenu', {
         .icon-avatar {
             position: relative;
             float: left;
-            width: 48px;
-            height: 48px;
+            width: 57px;
+            height: 57px;
             margin-right: 10px;
-            /* background: #d6d5d3; */
+            border: 4px solid #fff;
         }
         .list-text {
             .list-time {
@@ -686,6 +648,7 @@ Vue.directive('oncontextmenu', {
         border-radius: 2px;
     }
     .name {
+        position: absolute;
         display: inline-block;
         font-size: 18px;
         margin: 0;
@@ -693,6 +656,9 @@ Vue.directive('oncontextmenu', {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        width: 100%;
+        left: 0;
+        padding-left: 63px;
     }
     .friendApply-box {
         position: absolute;
@@ -725,8 +691,18 @@ Vue.directive('oncontextmenu', {
             overflow: auto;
         }
     .search { 
-        position: absolute;background-color: #2a5431;width: 220px;
+        position: absolute;background-color: #e8e8e8;width: 252px;
         z-index: 999;height: 517px;overflow: auto;
+        .search-list {
+            .icon-avatar {
+                position: relative;
+                float: left;
+                width: 57px;
+                height: 57px;
+                margin-right: 10px;
+                border: 4px solid #fff;
+            }
+        } 
         .search-list-name {
             padding-left: 10px;
             background-color: #fff;
@@ -773,9 +749,12 @@ Vue.directive('oncontextmenu', {
         cursor: pointer;
         transition: background-color .1s;
         position: relative;
-        border-top: 1px solid #5f5f5f;
+        border-top: 1px solid #dcdcdc;
         &.active {
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+        &:last-child{
+            border-bottom: 1px solid #ccc;
         }
         .message-num {
             position: absolute;
@@ -795,13 +774,7 @@ Vue.directive('oncontextmenu', {
     .avatar, .name {
         vertical-align: middle;
     }
-    .icon-avatar {
-        position: relative;
-        float: left;
-        width: 48px;
-        height: 48px;
-        /* background: #d6d5d3; */
-    }
+    
     .avatar {
         border-radius: 2px;
     }
@@ -813,10 +786,10 @@ Vue.directive('oncontextmenu', {
         .icon-avatar {
             position: relative;
             float: left;
-            width: 48px;
-            height: 48px;
+            width: 57px;
+            height: 57px;
             margin-right: 10px;
-            /* background: #d6d5d3; */
+            border: 4px solid #fff;
         }
         .list-text {
             .list-time {
@@ -833,7 +806,7 @@ Vue.directive('oncontextmenu', {
                 line-height: 23px;
                 font-size: 14px;
                 color: #888888;
-                width: 125px;
+                width: 150px;
                 overflow: hidden;
                 text-overflow: ellipsis;
                 white-space: nowrap;
@@ -843,7 +816,7 @@ Vue.directive('oncontextmenu', {
     .group-list, .search {
         li {
             padding: 12px;
-            height: 65px;
+            height: 76px;
         }
         .name {
             width: 135px;
@@ -852,9 +825,9 @@ Vue.directive('oncontextmenu', {
     }
     .name {
         display: inline-block;
-        font-size: 18px;
+        font-size: 16px;
         margin: 0;
-        color: #fff;
+        color: #000;
         width: 90px;
         overflow: hidden;
         text-overflow: ellipsis;

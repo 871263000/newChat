@@ -6,6 +6,13 @@ import qn from '../common/QiniuUpload';
 import emojis from '../common/emojis';
 import pasteEvnet from '../common/pasteEvnet';
 import { imgReader } from '../common/pasteEvnet';
+import Recorder from 'recorderjs';
+
+import AlloyFinger from 'alloyfinger/alloy_finger' // 手势库
+import AlloyFingerVue from 'alloyfinger/vue/alloy_finger'
+Vue.use(AlloyFingerVue, {
+  AlloyFinger
+});
 
 Vue.component('messagesLog', function (resolve) {
   // 这个特殊的 require 语法告诉 webpack
@@ -33,6 +40,12 @@ export default {
             iphoneText: false,
             sendImgShow: false,
             sendImgSrcU:'',
+            luyin: false,
+            recording: {
+                mediaRec: '',
+                src: '',
+            },
+            sondShow: false
         };
     },
     computed: mapState({
@@ -89,18 +102,19 @@ export default {
             if (typeof file == 'undefined' ) {
                 return false;
             };
-
             if(/image\/\w+/.test(file.type)){
                 type = 'img';
             } else {
                 type = 'file';
             }
-
             let size = Math.floor(file.size / 1024);
             let name = file.name;
             let nowTime = new Date().getTime();
             let userId = this.user.id;
             let start = this.start;
+            if ( file.type.indexOf('quicktime') !== -1 ) {
+                name = file.name.replace('MOV', 'mp4');
+            }
             // let blkRet = {fname:"61a58PICtPr_1024.jpg",key:"file/4/0/1497527624635/61a58PICtPr_1024.jpg"};
             // let cd = '';
             // if ( type == 'file' ) {
@@ -204,6 +218,186 @@ export default {
                 return false; 
             }
             this.fileUpload(fileList);
+        },
+        recorded () {
+            let _this = this;
+            this.luyin = !this.luyin;
+            var app = {
+                initialize: function() {
+                    document.addEventListener('deviceready', this.onDeviceReady.bind(this), false);
+                },
+                onDeviceReady: function() {
+                    let src = (new Date().getTime())+".m4a";
+                    _this.recording.src = src;
+                    _this.recording.mediaRec = new Media(src,
+                         // success callback
+                         function() {
+                            console.log("recordAudio():Audio Success");
+                         },
+                         
+                         // error callback
+                         function(err) {
+                            console.log("recordAudio():Audio Error: "+ err);
+                         }
+                    );
+                    // this.receivedEvent('deviceready');
+                },
+            };
+            app.initialize();
+        },
+        startRecording (evt) {
+            this.sondShow = true;
+            this.recording.mediaRec.startRecord();
+
+        },
+        stopRecording (evt) {
+            this.sondShow = false;
+            let _this = this;
+
+            this.recording.mediaRec.stopRecord();
+            this.recording.mediaRec.release();
+
+            if ( navigator.userAgent.indexOf('oks_ltd_android')>0 ) {
+                resolveLocalFileSystemURL(cordova.file.externalRootDirectory, function(dirEntry) {
+                    // dirEntry 为“name.wav”文件所在的根目录 
+                    dirEntry.getFile(_this.recording.src, {}, function(fileEntry) {
+                        // 获得文件入口
+                        fileEntry.file(function(file) {
+                            // 读取文件
+                            var reader = new FileReader();
+                            reader.onloadend = function () {
+                               qiniuUpload(this.result);
+                            }
+                            reader.readAsDataURL(file);
+                        }, function (e) {
+                            console.log(e);
+                        });
+                    }, function (e) {
+                            console.log(e);
+                        });
+                }, function (e) {
+                            console.log(e);
+                        });
+            } else {
+                 window.requestFileSystem(window.TEMPORARY,0,function(dirEntry){
+                    dirEntry.root.getFile(_this.recording.src,{},function(fileEntry){
+                        fileEntry.file(function(file){
+                            var reader=new FileReader();
+                            reader.onloadend=function(){
+                                qiniuUpload(this.result);
+                            }
+                            reader.readAsDataURL(file);
+                        });
+                    });
+
+                });
+            }
+
+            //**dataURL to blob**
+            function dataURLtoBlob(dataurl) {
+                var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+                    bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+                while (n--) {
+                    u8arr[n] = bstr.charCodeAt(n);
+                }
+                return new Blob([u8arr], { type: mime });
+            }
+            // 生成随机字符串
+            function guid() {
+                function S4() {
+                    return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
+                }
+                return (S4()+S4()+"-"+S4()+"-"+S4()+"-"+S4()+"-"+S4()+S4()+S4());
+            }
+            
+            // let qiniuUpload = function (result) {
+            //     let src = result, urlParam, bal;
+            //     var ba = src.substring(22);
+            //     bal = src.substring(22);
+
+            //     var equalIndex= ba.indexOf('=');
+
+            //     if( bal.indexOf('=') > 0 )
+            //     {
+            //         bal = ba.substring(0, equalIndex);
+
+            //     }
+            //     var baLength=bal.length;
+
+            //     var baLength = parseInt(baLength-(baLength/8)*2);
+
+            //     urlParam = 'putb64/' + baLength+'/' + guid() + '.m4a';
+
+            //     qn.getQiniuToken('/chat/uptoken.php', (token) =>{
+            //         _this.uploadBase64(ba, token, urlParam,  (bar) =>{
+            //             // let img = '<img src="http://7xq4o9.com1.z0.glb.clouddn.com/'+bar.key+'">';
+            //             if ( !data.error ) {
+            //                  let cd = '';
+            //                 cd = {
+            //                     content: '-voice-[voice|'+'http://7xq4o9.com1.z0.glb.clouddn.com/'+bar.key+']',
+            //                 };
+            //                 _this.$store.dispatch('sendMessage', {content: cd.content});
+            //             } else {
+            //                 alert('发送失败！请重新发送');
+            //             }
+            //             // this.sendImgSrcU = bar.key;
+            //             // this.sendImgShow = true;
+            //         });
+            //     });
+            // }
+
+            let qiniuUpload = function (file) {
+                qn.Qiniu_upload({
+                    key: '/voice/voicefile'+guid()+'.m4a',
+                    tokenurl: '/chat/uptoken.php',
+                    f: dataURLtoBlob(file),
+                    QiniuUrl: 'http://up.qiniu.com',
+                }, function (data) {
+                    // let audio = document.createElement('audio');
+                    //  audio.src = 'http://7xq4o9.com1.z0.glb.clouddn.com' + data.key;
+                    // audio.play();
+                    if ( !data.error ) {
+                         let cd = '';
+                        cd = {
+                            content: '-voice-['+data.fname+'|'+'http://7xq4o9.com1.z0.glb.clouddn.com/'+data.key+']',
+                        };
+                        _this.$store.dispatch('sendMessage', {content: cd.content});
+                    } else {
+                        alert('发送失败！请重新发送');
+                    }
+                    if ( navigator.userAgent.indexOf('oks_ltd_android')>0 ) {
+                        resolveLocalFileSystemURL(cordova.file.externalRootDirectory, function(dirEntry) {
+                            // dirEntry 为“name.wav”文件所在的根目录 
+                            dirEntry.getFile(_this.recording.src, {}, function(fileEntry) {
+                                // 获得文件入口
+                                fileEntry.remove(function() {
+                                    console.log('删除成功！');
+                                    // 读取文件
+                                }, errorHandler);
+                            }, errorHandler);
+                        }, errorHandler);
+                    } else {
+                        window.requestFileSystem(window.TEMPORARY,0,function(dirEntry){
+                            dirEntry.root.getFile(_this.recording.src,{},function(fileEntry){
+                                fileEntry.remove(function(){
+                                    console.log('删除成功！');
+                                });
+                            });
+                            
+                        });
+                    }
+                });
+            }            
+
+            // console.log(gRecorder.getBlob());
+        },
+        inFocus () {
+            setTimeout("window.scrollTo(0, 1000)",200);
+            document.getElementsByTagName('body')[0].scrollIntoView();
+            document.activeElement.scrollIntoViewIfNeeded();
+        },
+        messageImgFd (img) {
+            this.$emit('enlarge', img);
         }
 
     },
@@ -242,15 +436,37 @@ export default {
 <template>
 <div class="text-box">
     <div class="text"  v-if="start">
-    <messagesLog :show="showMessageLog" @close="showMessageLog = false" v-if="showMessageLog"></messagesLog>
+    <messagesLog :show="showMessageLog" @imgShow="messageImgFd" @close="showMessageLog = false" v-if="showMessageLog"></messagesLog>
     <sendImg v-if="sendImgShow" @close="sendImgShow = false" :src="sendImgSrcU">
     </sendImg>
+    <!-- 语音正在说话 -->
+    <div class="recording" v-if="sondShow">
+        <div class="recording-voice">
+            <div class="voice-inner">
+                <div class="voice-icon">
+                    <i class="iconfont-chat">&#xe61c;</i>
+                </div>
+                <div class="voice-volume">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+            <p>向上滑动取消发送</p>
+        </div>
+    </div>
     <!--  表情包 -->
         <div class="chat-tool">
             <div class="emoticon" v-if="emShow">
                 <ul class="emoticon-list">
                     <li @click.stop = "emojiInsert(emojiObj)" v-for="(emojiObj, index) in emojis">
-                        <img :src="'/chatStatic/emoji/'+ emojiObj.num +'@2x.png'" :title="emojiObj.name" alt="">
+                        <img :src="'http://www.omso2o.com/chatStatic/emoji/'+ emojiObj.num +'@2x.png'" :title="emojiObj.name" alt="">
                     </li>
                 </ul>
             </div>
@@ -262,14 +478,24 @@ export default {
                 <li title="聊天记录" @click="showMessageLog = true" style="float:right;margin-right: 20px;"><img src="../assets/ltjl.png" alt="聊天记录"></li>
             </ul>
         </div>
-        <!-- 手机表情 -->
+       <!-- 语音 -->
+        <div v-if="iphoneText" class="tool-yuyin" @click="recorded()">
+            <i class="iconfont-chat" v-if="!luyin">&#xe65a;</i><i class="iconfont-chat" v-if="luyin">&#xe60d;</i>
+        </div>
+        <div class="press-to-speak-box" v-show="luyin" v-finger:touch-start="startRecording" v-finger:touch-end="stopRecording">
+            <div class="press-to-speak">
+                <span v-if="true">按下说话</span>
+                <span v-if="false">松开结束</span>
+            </div>
+        </div>
+        <div class="textarea-box" v-show="!luyin">
+            <textarea placeholder="" v-if="!iphoneText" v-model="content" ref="textarea" @keydown.enter="onKeydown" @paste="pasteOver($event)" @drop="dropFile($event)"></textarea>
+            <input placeholder="" v-if="iphoneText" @focus="inFocus()" v-model="content" id="chat-input"  ref="textarea" @keydown.enter="onKeydown" @paste="pasteOver()">
+            
+        </div>
+         <!-- 手机表情 -->
         <div v-if="iphoneText" @click.stop="emShow = !emShow" class="tool-emoji">
             <i class="iconfont-chat">&#xe62c;</i>
-        </div>
-        <div class="textarea-box">
-            <textarea placeholder="" v-if="!iphoneText" v-model="content" ref="textarea" @keydown.enter="onKeydown" @paste="pasteOver($event)" @drop="dropFile($event)"></textarea>
-            <input placeholder="" v-if="iphoneText" v-model="content" id="chat-input"  ref="textarea" @keydown.enter="onKeydown" @paste="pasteOver()">
-            
         </div>
         <div class="send-act">
             <div class="chat-send">
@@ -301,6 +527,78 @@ export default {
 * {
         box-sizing: border-box;
 }
+.recording {
+    position: fixed;
+    left: 50%;
+    top: 45%;
+    transform: translate(-50%, -50%);
+    width: 140px;
+    height: 140px;
+    padding: 5px;
+    background-color: rgba(0, 0, 0, .5);
+    color: #ffffff;
+    border-radius: 5px;
+    font-size: 14px;
+    text-align: center;
+    p {
+        margin: 0;
+    }
+    .voice-inner {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 110px;
+        .voice-icon {
+            i {
+                font-size: 80px;
+            }
+        }
+        .voice-volume {
+            span {
+                &:nth-child(1) {
+                    width: 24px;
+                }
+                &:nth-child(2) {
+                    width: 22px;
+                }
+                &:nth-child(3) {
+                    width: 20px;
+                }
+                &:nth-child(4) {
+                    width: 18px;
+                }
+                &:nth-child(5) {
+                    width: 16px;
+                }
+                &:nth-child(6) {
+                    width: 14px;
+                }
+                &:nth-child(7) {
+                    width: 12px;
+                }
+                &:nth-child(8) {
+                    width: 10px;
+                }
+                padding: 0;
+                margin: 0;
+                display: block;
+                height: 2px;
+                margin-top: 4px;
+                min-width: 8px;
+                float: left;
+                clear: both;
+                animation-iteration-count: infinite;
+                animation-timing-function: linear;
+                animation-duration: 2000ms;
+                background-color: #e4e4e5;
+            }
+        } 
+    }
+    .voice-volume {
+        width: 30px;
+        height: 55px;
+    }
+}
 .chat-tool {
     height: 0;background-color: #fff;
     // 表情包
@@ -323,6 +621,7 @@ export default {
         text-align: center;
         line-height: 32px;
         padding: 7px;
+        cursor: pointer;
     }
     li img{
         width: 30px;
@@ -335,6 +634,7 @@ export default {
 }
 .text-box {
     height: 50px;
+    width: 100%;
     position: fixed;
     bottom: 0;
     left: 0;
@@ -352,6 +652,20 @@ export default {
     position: relative;
     background-color: #ffffff;
     font-family: "微软雅黑";
+    .tool-yuyin {
+        color: #7d7e83;
+        flex-basis: 40px;
+        width: 40px;
+        padding: 0 3px;
+        font-size: 30px;
+        flex-grow: 0;
+        vertical-align: middle;
+        line-height: 40px;
+        padding: 0 4px;
+        i {
+            font-size: 30px;
+        }
+    }
     .tool-emoji{
         color: #7d7e83;
         flex-basis: 40px;
@@ -365,9 +679,34 @@ export default {
         line-height: 40px;
         text-align: center;
         i {
-            font-size: 32px;
+            font-size: 30px;
         }
 
+    }
+    .press-to-speak-box {
+       vertical-align: middle;
+        padding: 4px 0px;
+        height: 100%;
+        flex-grow: 1;
+        flex-basis: 200px;
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none; 
+    }
+    .press-to-speak {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 6px;
+        overflow: hidden;
+        padding: 0 10px;
+        width: 200%;
+        height: 200%;
+        color: #565656;
+        border: 1px solid #7d7e83;
+        transform: scale(.5);
+        transform-origin: 0 0;
+        font-size: 30px;
     }
     .textarea-box {
         vertical-align: middle;
@@ -390,49 +729,47 @@ export default {
         appearance: none;
     }
     .send-act {
-        text-align: center;
         color: #7d7e83;
-        flex-basis: 50px;
+        flex-basis: 40px;
+        width: 40px;
+        padding: 0 3px;
+        font-size: 30px;
         flex-grow: 0;
         vertical-align: middle;
+        line-height: 40px;
         padding: 0 4px;
-        height: 100%;
-        padding: 0px 3px;
-        line-height: 41px;
-        background-color: #fff;
     }
     .mul-function{
-        height: 36px;
+        height: 40px;
         cursor: pointer;
         background-color: #fff;
         color: #222;
-        padding-top: 3px;
-        /* padding: 2px 3px; */
         display: inline-block;
         /* border: 1px solid #ccc; */
-        line-height: 36px;
+        line-height: 40px;
         text-align: center;
-        width: 40px;
         i {
-            font-size: 32px;
+            font-size: 30px;
             color: #7d7e83;
         }
     }
     .chat-send {
         height: 100%;
+        line-height: 100%;
     }
     .send-btn {
         height: 30px;
         cursor: pointer;
         background-color: #fff;
         color: #222;
-        padding: 2px 3px;
         display: inline-block;
         border: 1px solid #ccc;
         margin-right: 10px;
+        margin-left: -3px;
         line-height: 30px;
         text-align: center;
-        width: 50px;
+        width: 35px;
+        font-size: 12px;
     }
     .active {
         border-left: 8px solid #88154c;
@@ -445,7 +782,7 @@ export default {
 
 
 .chat-tool {
-    height: 32px;background-color: #fff;
+    height: 32px;background-color: #eee;
     position:relative;
     // 表情包
     .emoticon {
@@ -458,13 +795,14 @@ export default {
     ul{
          height: 100%;
          padding-left: 10px;
-    }
-    ul li{
-        float:left;
-        width: 34px;
-        height: 100%;
-        text-align: center;
-        line-height: 32px;
+         li{
+            float:left;
+            width: 34px;
+            height: 100%;
+            text-align: center;
+            line-height: 32px;
+            cursor: pointer;
+        }
     }
     li img{
         width: 20px;
@@ -487,9 +825,11 @@ export default {
     background-color: #fff;
     
     .textarea-box {
-        margin-left: 10px;
+        background-color: #eee;
+        padding-left: 10px;
     }
     textarea {
+        background-color: #eee;
         height:  93px;
         width: 100%;
         border: none;
@@ -502,7 +842,7 @@ export default {
     .send-act {
         position: relative;
         top:-7px;
-        background-color: #fff;
+        background-color: #eee;
     }
     .text-right {
         text-align: right;

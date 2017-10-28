@@ -8,10 +8,11 @@ import Websocket from './Websocket';
 import { reverse } from './messageHandel';
 import messageHandle from './messageHandel';
 import  events from './modules/events';
-
+import axios from 'axios'
 
 Vue.use(Vuex);
-
+// Vue.prototype.$http = axios
+axios.defaults.headers['Content-Type'] = 'application/x-www-form-urlencoded';
 const now = new Date();
 
 
@@ -120,15 +121,76 @@ const store = new Vuex.Store({
                 alert(data.msg);
                 return false;
             }
+
+            // 记录日志
+            // let errorLog = {"t": 0, "data": data, "user": user.id};
+            let errorLog = data;
+            errorLog.t = 0;
+            errorLog.user = user.id;
+
+
+            
+            if ( data.type == 'message' && data.accept_id != user.id &&  data.senderId != user.id) {
+                errorLog.t = 1;
+                axios({
+                  url: '/omsIm/demo/json/errorLog.php',
+                  method: 'post',
+                  data: errorLog,
+                  transformRequest: [function (data) {
+                    // Do whatever you want to transform the data
+                    let ret = ''
+                    for (let it in data) {
+                      ret += encodeURIComponent(it) + '=' + encodeURIComponent(data[it]) + '&'
+                    }
+                    return ret
+                  }],
+                  headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                  }
+                })
+                return ;
+            }
+            // if ( data.senderId != user.id ) {
+            //     axios({
+            //       url: '/omsIm/demo/json/errorLog.php',
+            //       method: 'post',
+            //       data: errorLog,
+            //       transformRequest: [function (data) {
+            //         // Do whatever you want to transform the data
+            //         let ret = ''
+            //         for (let it in data) {
+            //           ret += encodeURIComponent(it) + '=' + encodeURIComponent(data[it]) + '&'
+            //         }
+            //         return ret
+            //       }],
+            //       headers: {
+            //         'Content-Type': 'application/x-www-form-urlencoded'
+            //       }
+            //     })
+            //     // let param = new URLSearchParams();
+            //     // param.append('data',JSON.stringify(errorLog));
+            //     // this.$http.post('/omsIm/demo/json/getList.php', errorLog, {emulateJSON:true})
+            //     // axios.post('/omsIm/demo/json/errorLog.php', {params: errorLog}, {emulateJSON:true})
+            //     //   .then(function (response) {
+            //     //   })
+            //     //   .catch(function (error) {
+            //     //     console.log(error);
+            //     //   });
+            // }
+
+
+            
+// 记录日志end
             let saveMessage = {};
             let session = sessions.find(item => item.id == data.dialogueId && item.type === data.type );
-            data.content = reverse(data.content);
+            // data.content = reverse(data.content);
             if ( data.senderId == user.id  ) {
                 saveMessage = {
                     id: data.id,
                     content: data.content,
                     date: new Date(),
-                    self: true
+                    self: true,
+                    accept_id: data.accept_id
                 }
             } else {
                 let date = '';
@@ -140,7 +202,8 @@ const store = new Vuex.Store({
                     name: data.name, 
                     img: data.img,
                     content: data.content,
-                    date: date || new Date()
+                    date: date || new Date(),
+                    accept_id: data.accept_id
                 }
             }
             // 会话列表里有
@@ -183,6 +246,12 @@ const store = new Vuex.Store({
                 session.messages.push(saveMessage);
                 sessions.unshift(session);
             }
+            // console.log(data);
+
+            // console.log(Vue.$http);
+            // Vue.$http.post('/omsIm/demo/json/errorLog.php', errorLog, {emulateJSON:true}).then(res=> {
+                 
+            // });
             // if ( session && session.messageNum != 0 ) {
             //     Websocket.sendMessage({"type":"mes_close", "to_uid":data.id,  "session_no": data.id, "message_type": data.type});
             // };
@@ -283,9 +352,22 @@ const store = new Vuex.Store({
             };
             Websocket.sendMessage(sendMessage);
         },
+         batchSendMessage: ({ commit, state }, data) => {
+            let sendMessage;
+
+            // 转换内容 
+
+            sendMessage = {type:"sayUid", to_uid: data.id, groupId: 0, accept_name: data.name, message_type: data.type, mes_types: 'text', content: data.content  };
+            // console.log(sendMessage);return;
+            if ( data.type != 'message'  ) {
+                sendMessage.session_no = data.id;
+            };
+            Websocket.sendMessage(sendMessage);
+        },
         // 后台发来的未读消息，
         acceptMes: ({ commit, state }, data) => {
             let saveData;
+
             let name, sessionId,sessionName,img, sessionImg;
             if ( data ) {
                 data.forEach(function ( d ) {
@@ -325,7 +407,9 @@ const store = new Vuex.Store({
                         sessionImg: sessionImg,
                         img: img,
                         type: d.message_type,
-                        date: d.create_time
+                        date: d.create_time,
+                        accept_id: d.accept_id,
+                        acceptMode: 'h'
 
                     };
                     saveData.code = 1;

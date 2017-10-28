@@ -156,7 +156,7 @@ export default {
 	.menu {
         position: relative;
         cursor:pointer; 
-		width: 50px;
+		width: 58px;
         height: 100%;
         li {
             position: relative;

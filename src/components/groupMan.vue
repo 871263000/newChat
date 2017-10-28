@@ -42,7 +42,7 @@ export default {
         	this.addNewGrouperShow = true;
         },
         quitNewGrouper () {
-        	if ( this.user.id != this.groupInfo.group_founder ) {
+        	if ( this.user.id == this.groupInfo.group_founder ) {
             	if (!confirm('你确定要解散该群吗？')) {
             		return false;
             	};
@@ -78,6 +78,20 @@ export default {
 
 	            });
         	};
+        },
+        selectedMan (selectedMan, selectedId) {
+        	let data = { class: 'addGrouper', data: selectedMan, session: this.currentSession.id };
+            this.$http.post('/omsIm/demo/json/getList.php', data, {emulateJSON:true})
+            .then(res=> {
+                this.userInfo = res.data;
+            })
+            .catch(res => {
+
+            });
+            alert('添加成功！');
+        },
+        imgFd (img) {
+        	this.$emit('imgShow', img);
         }
     },
     created () {
@@ -98,8 +112,8 @@ export default {
 <!-- 手机 title -->
 <div class="person-info">
 <!-- 群增加人 -->
-	<addNewGrouper v-if="addNewGrouperShow" :id="this.currentSession.id" @close="addNewGrouperShow = false"></addNewGrouper>
-	<messagesLog :show="showMessageLog" @close="showMessageLog = false" v-if="showMessageLog"></messagesLog>
+	<addNewGrouper v-if="addNewGrouperShow" :id="this.currentSession.id" @close="addNewGrouperShow = false" @selectedMan="selectedMan"></addNewGrouper>
+	<messagesLog :show="showMessageLog" @imgShow="imgFd" @close="showMessageLog = false" v-if="showMessageLog"></messagesLog>
 	<div class="dialog-title" ref="chatDrop" v-chat-drop>
 	    <i class="backSession" @click="$emit('close')"></i>
 	    <!-- <i class="backSession" @click="clearSession()"></i> -->
@@ -117,7 +131,7 @@ export default {
 			<li v-for="lists in groupInfo.list" @click="selectSession(lists.id, 'message', lists.username, lists.avatar)">
 				<div class="group-list-img"><img :src="lists.avatar"></div>
 				<div class="group-list-name"><span>{{lists.username}}</span></div>
-				<span @click.stop="delGrouper()" class="delGrouper">X</span>
+				<span @click.stop="delGrouper(lists.id)" class="delGrouper">X</span>
 			</li>
 		</ul>
 		<div class="delGroup" @click="quitNewGrouper()">

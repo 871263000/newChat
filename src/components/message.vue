@@ -5,6 +5,12 @@ import insertAtCursor from '../common/insertAtCursor';
 import { reverse } from '../messageHandel';
 
 
+import AlloyFinger from 'alloyfinger/alloy_finger' // 手势库
+import AlloyFingerVue from 'alloyfinger/vue/alloy_finger'
+Vue.use(AlloyFingerVue, {
+  AlloyFinger
+});
+
 
 Vue.component('messagesLog', function (resolve) {
   // 这个特殊的 require 语法告诉 webpack
@@ -14,9 +20,6 @@ Vue.component('messagesLog', function (resolve) {
 });
 
 
-Vue.component('imgFd', function (resolve) {
-  require(['./imgCat'], resolve)
-});
 // 个人信息
 
 Vue.component('persInfo', function (resolve) {
@@ -27,16 +30,25 @@ Vue.component('persInfo', function (resolve) {
 Vue.component('groupMan', function (resolve) {
     require(['./groupMan'], resolve);
 });
-
+// 
+Vue.component('shareModel', function (resolve) {
+  // 这个特殊的 require 语法告诉 webpack
+  // 自动将编译后的代码分割成不同的块，
+  // 这些块将通过 Ajax 请求自动下载。
+  require(['./selectFriends'], resolve)
+});
 
 export default {
     data () {
         return {
             showMessageLog: false,
-            showImg: false,
-            imgfdBoxinfo: '',
+            // showImg: false,
+            // imgfdBoxinfo: '',
             persInfo: false,
             groupManShow: false,
+            shareShow: false,
+            shareContent: '',
+            playComplete: false,
         }
     },
     computed:  mapState({
@@ -44,6 +56,9 @@ export default {
         session: (state) => state.sessions.find(session => session.id === state.currentSession.id),
         dialogName: (state) => {
             return state.currentSession.name;
+        },
+        dialogImg: (state) => {
+            return state.currentSession.img;
         },
         dialogId: (state) => {
             return state.currentSession.id;
@@ -63,16 +78,54 @@ export default {
         }
     },
     methods: {
-        content ( content ) {
+        content ( content, self ) {
+            if ( content.indexOf('-voice-[') !== -1 ) {
+
+               content =  content.replace(/-(voice)-\[(.*?)\]/g, function (f, i, z) {
+                  let m = '';
+                  let zArr = z.split('|');
+
+                  if ( z[1] ) {
+                    if ( self ) {
+                      m = '<voice class="iconfont-chat" data-content="'+zArr[1]+'">&#xe604;<i class="playingRight"></i></voice>';
+                    } else {
+                      m = '<voice class="iconfont-chat" data-content="'+zArr[1]+'">&#xe605;<i class="playingLeft"></i></voice>';
+                    } 
+                  };
+                  return m;
+                });
+               return content;
+            }
             return reverse(content);
         },
-        imgFd (e) {
+        sendType (e) {
+            let _this = this;
             if ( e.target.nodeName == 'IMG' ) {
                 let img = e.target.src;
 
-                this.imgfdBoxinfo = img;
-                this.showImg = true;
+                // this.imgfdBoxinfo = img;
+                this.$emit('enlarge', img);
+                // this.showImg = true;
             }
+            if (e.target.nodeName == 'SHARE') {
+
+                this.shareContent = e.target.getAttribute('data-content');
+                this.shareShow = true;
+            }
+            if ( e.target.nodeName == 'VOICE' ) {
+                this.$refs.audio.onended = function() {
+                    _this.playComplete = false;
+                    e.target.children[0].style.display = 'none';
+                };
+                this.$refs.audio.src = e.target.getAttribute('data-content');
+                e.target.children[0].style.display = 'inline-block';
+                this.$refs.audio.play();
+                this.playComplete = true;
+                
+
+            }
+            // console.log(e.target.nodeName);
+            // console.log(e.target);
         },
         clearSession () {
             this.$emit('mainShow');
@@ -106,8 +159,37 @@ export default {
             }
             // this.content = this.$refs.textarea.value;
         },
-        mousedown (content) {
-            console.log(content);
+        mousedown (e, content) {
+            if ( e.which == 3 ) {
+            };
+        },
+        share (selectedMan, selectedId) {
+            let data = {};
+            for (let i in selectedMan) {
+                data.senderId = this.user.id;
+                data.name = selectedMan[i].username;
+                data.img = selectedMan[i].avatar;
+                data.type = 'message';
+                data.id =  selectedMan[i].id;
+                data.content = this.shareContent;
+                if ( data.content ) {
+                    this.$store.dispatch('batchSendMessage', data);
+                    alert('已分享！');
+                    return ;
+                }
+                alert('分享失败！');
+                return false;
+
+            }
+            
+        },
+        longTop (evt) {
+            console.log(evt.target.getAttribute('data-content'));
+            // $event.appendChild($event);
+            // console.log($event);
+        },
+        messageImgFd (img) {
+             this.$emit('enlarge', img);
         }
 
     },
@@ -162,20 +244,20 @@ Vue.directive('scroll-bottom', function(el) {
 
 <template>
 <div class="message">
+    <audio ref="audio"></audio>
+    <!-- 分享 -->
+    <shareModel @selectedMan="share" v-if="shareShow" @close="shareShow =false"></shareModel>
 <!-- 群里的人 -->
     <transition name="slide-groupMan">
         <div class="groupMan"  v-if="groupManShow">
-            <groupMan></groupMan>
+            <groupMan @imgShow="messageImgFd"></groupMan>
         </div>
     </transition>
-<!-- 个人消息 -->
-  <persInfo v-if="persInfo" @close="persInfo = false"></persInfo>
-<!-- img放大 -->
-    <imgFd v-if="showImg" @close="showImg = false" :imgSrc="imgfdBoxinfo">
-        <!-- <div slot="imgBody" v-html="imgfdBoxinfo"></div> -->
-    </imgFd>
+<!-- 个人信息 -->
+  <persInfo v-if="persInfo" @imgShow="messageImgFd" @close="persInfo = false"></persInfo>
+
 <!-- 聊天信息 -->
-    <messagesLog :show="showMessageLog" @close="showMessageLog = false" v-if="showMessageLog"></messagesLog>
+    <messagesLog :show="showMessageLog" @imgShow="messageImgFd" @close="showMessageLog = false" v-if="showMessageLog"></messagesLog>
 
     <!-- 手机 title -->
     <div class="dialog-title" v-chat-drop>
@@ -195,7 +277,7 @@ Vue.directive('scroll-bottom', function(el) {
             <div class="main" :class="{ self: item.self }">
                 <img class="avatar" width="40" height="40" :src="item.self ? user.img : item.img" @click="appoint(item.name)" />
                 <div v-if="dialogType == 'groupMessage' && !item.self" class="groupName">{{item.name}}</div>
-                <div class="text" @mousedown.3="mousedown(content(item.content))" @click="imgFd($event)" v-html="content(item.content)"></div>
+                <div class="text" @mousedown.3="mousedown($event, content(item.content))" @click="sendType($event)" :data-content="item.content" v-finger:long-tap="longTop" v-oncontextmenu="item.content" v-html="content(item.content, item.self)"></div>
             </div>
         </li>
     </ul>
@@ -207,8 +289,45 @@ Vue.directive('scroll-bottom', function(el) {
         a{
             text-decoration: none;
         }
+        voice {
+            cursor: pointer;
+            font-size: 28px;
+            height: 35px;
+            line-height: 35px;
+        }
+        .playingLeft {
+
+            display: none;
+            position: absolute;
+            right: -25px;
+            top: 17px;
+            width: 10px;
+            height: 10px;
+            border-radius: 10px;
+            background-color: red;
+        }
+        .playingRight {
+            display: none;
+            position: absolute;
+            left: -25px;
+            top: 17px;
+            width: 10px;
+            height: 10px;
+            border-radius: 10px;
+            background-color: red;
+        }
         .chat-file{
             text-align: center;
+            width: 180px;
+            position: relative;
+            .chat-share {
+                position: absolute;
+                font-size: 20px;
+                top: 0;
+                right: 0;
+                padding: 10px;
+                cursor: pointer;
+            }
             i {
                 width: 56px;
                 height: 56px;
@@ -222,7 +341,13 @@ Vue.directive('scroll-bottom', function(el) {
         }
         .main {
             p{
-                max-width:120px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+                max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+                text-align:center
+            }
+        }
+        .text {
+            a {
+                text-decoration:underline;
             }
         }
     }
@@ -277,6 +402,9 @@ Vue.directive('scroll-bottom', function(el) {
 }
 .message {
     width: 100%;
+    position: absolute;
+    top: 0;
+    bottom: 50px;
     .catMul{
         text-align: center;
         padding: 10px 0;
@@ -291,7 +419,7 @@ Vue.directive('scroll-bottom', function(el) {
     }
     ul {
         position: absolute;
-        bottom: 50px;
+        bottom: 0;
         top:50px;
         width:100%;
         overflow-y: auto;
@@ -345,7 +473,7 @@ Vue.directive('scroll-bottom', function(el) {
         word-break: break-all;
         background-color: #fafafa;
         border-radius: 4px;
-        line-height: 30px;
+        line-height: 25px;
         font-family:微软雅黑;
         &:before {
             content: " ";

@@ -72,16 +72,10 @@ export default {
         submit () {
             if ( !this.selected.length ) {
                 alert('还没有选择人！');
+                return false;
             }
-            let data = { class: 'addGrouper', data: this.selected, session: this.id };
-            this.$http.post('/omsIm/demo/json/getList.php', data, {emulateJSON:true})
-            .then(res=> {
-                this.userInfo = res.data;
-            })
-            .catch(res => {
-
-            });
-            alert('添加成功！');
+            this.$emit('selectedMan', this.selected, this.ids);
+            
             this.$emit('close');
         }
     }
@@ -90,6 +84,9 @@ export default {
 
 <template>
     <selectModel @close="close()">
+        <div slot="header">
+            选择你要转发的人员
+        </div>
         <div class="add-grouper" slot="body">
             <div class="add-grouper-left">
                 <div class="add-grouper-left-search">
@@ -104,7 +101,6 @@ export default {
                         </li>
                     </ul>
                 </div>
-
             </div>
             <div class="add-grouper-right">
                 <div class="add-grouper-right-container">
@@ -123,7 +119,6 @@ export default {
             </div>
         </div>
     </selectModel>
-
 </template>
 <style lang="less" scoped >
 @media screen and (max-width: 500px) {

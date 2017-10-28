@@ -19,7 +19,7 @@
 
             <div class="sidebar">
                 <card @mainShow="mainShow = false"></card>
-                <list @mainShow="mainShow = false"></list>
+                <list @mainShow="mainShow = false" @perInfoShow="persInfo = true"></list>
             </div>
             <div class="">
                 
@@ -31,8 +31,15 @@
                     </ul>
                 </div>
 
-                <message @mainShow="mainShow = true"></message>
-                <TextAre></TextAre>
+                <message @mainShow="mainShow = true" @enlarge="imgShow"></message>
+                <!-- img放大 -->
+                <imgFd v-if="dImgShow" @close="dImgShow = false" :imgSrc="imgSrc">
+                    <!-- <div slot="imgBody" v-html="imgfdBoxinfo"></div> -->
+                </imgFd>
+                <!-- 个人信息 -->
+                <persInfo v-if="persInfo" @imgShow="dImgShow = true" @close="persInfo = false"></persInfo>
+
+                <TextAre @enlarge="imgShow"></TextAre>
             </div>
               <!--  隐藏聊天 -->
             <div class="dialog-title" v-if="mainShow">
@@ -58,6 +65,15 @@ import TextAre from './components/text'
 import Message from './components/message'
 
 require('./assets/css/aliIcon.css');
+
+Vue.component('imgFd', function (resolve) {
+  require(['./components/imgCat'], resolve)
+});
+
+Vue.component('persInfo', function (resolve) {
+    require(['./components/persInfo'], resolve);
+});
+
 // const Loadmore = require('vue-loadmore').default;
 Vue.use(vueR);
 
@@ -81,6 +97,9 @@ export default {
             chatMainShow: false,
             iPhone: false,
             mainShow: false,
+            dImgShow: false,
+            imgSrc: '',
+            persInfo: false
         }
     },
     mounted () {
@@ -121,8 +140,9 @@ export default {
         
     },
     methods: {
-        transf () {
-
+        imgShow (img) {
+            this.imgSrc = img;
+            this.dImgShow = true;
         }
     },
 }
@@ -132,15 +152,14 @@ export default {
 <style lang="less">
 body, html {
     height: 100%;
-    overflow: hidden;
 }
 body {
     margin: 0;
-  font: 14px/1.4em 'Helvetica Neue', Helvetica, 'Microsoft Yahei', Arial, sans-serif;
-  background-size: cover;
-  font-smoothing: antialiased;
-  width: 100%;
-  height: 100%;
+    font: 14px/1.4em 'Helvetica Neue', Helvetica, 'Microsoft Yahei', Arial, sans-serif;
+    background-size: cover;
+    font-smoothing: antialiased;
+    width: 100%;
+    height: 100%;
 }
 ul {
     margin: 0;
@@ -176,7 +195,7 @@ img{
         position: fixed;
         z-index: 999999;
         bottom: 28px;
-        right:28px;
+        left:28px;
     }
     .mesNum{
         position: absolute;
@@ -269,7 +288,7 @@ img{
     position: fixed;
     z-index: 999999;
     bottom: 28px;
-    right:28px;
+    left:28px;
 }
 .mesNum{
     position: absolute;
@@ -315,6 +334,7 @@ img{
     left: 50%;
     margin-left: -430px;
     border-radius: 3px;
+    box-shadow: 0 0 20px #1d1d1d;
     .mask {
         background-color: rgba(255,255,255,0.8);
         position: absolute;
@@ -345,9 +365,12 @@ img{
     }
     .sidebar {
         float: left;
-        width: 220px;
+        width: 252px;
         color: #f4f4f4;
-        background-color:#38354a;
+        border-bottom: 1px solid #ccc;
+        border-top: 1px solid #ccc;
+        /*background-color:#38354a;*/
+        background-color:#f9f9f9;
     }
     .main {
         border: 1px solid #ccc;

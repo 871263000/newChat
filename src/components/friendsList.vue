@@ -53,7 +53,7 @@ export default {
 	    <ul v-if="openFun">
 	         <li v-for="list in item.list" @click="selectSession(list.id, 'message', list.username, list.avatar, item.id, list )" :class="{ active: list.id === currentId }">
 	             <img :src="list.avatar" alt="" width="40" height="40">
-	            <p class="name" style=" display: inline-block;font-size: 18px;margin: 0;width: 125px;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;">{{ list.username }}</p>
+	            <p class="name" style=" display: inline-block;font-size: 18px;margin: 0;width: 125px;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;color: #000;">{{ list.username }}</p>
 	            <i v-if="list.state == 1" class="friendNew"></i>
 	            <span v-if="item.id == 1" class="friendApply">{{ list.state == 1 ? "等待验证":"好友申请" }}</span>
 	        </li>
@@ -206,7 +206,7 @@ export default {
             line-height: 20px;
             border-radius: 20px;
             background-color: #d32f2f;
-            color: #fff;
+            color: #000;
             text-align: center;
             right: 20px;
             /* right: 10px; */

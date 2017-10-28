@@ -21,7 +21,8 @@ const getters = {
 
 const mutations = {
 	SELF_LOGIN (state, data) {
-
+		state.onlineMan = 0;
+		state.onlineList = [];
 		for (let i in data) {
 			if ( state.onlineList.indexOf(i) === -1 ) {
 				state.onlineMan ++;
@@ -29,11 +30,9 @@ const mutations = {
 			}
 			
 		}
-		// 去除自己
-		state.onlineMan --;
 		state.complete = true;
 	},
-	LOGIN (state) {
+	LOGIN (state, data) {
 		state.onlineMan ++;
 	},
 	SAYUID ( state, data) {
@@ -49,7 +48,7 @@ const actions = {
 		commit('SELF_LOGIN', data.data.client_list);
 	},
 	login: ({ state, commit }, data) => {
-		commit('LOGIN');
+		commit('LOGIN', data);
 		return false;
 	},
 	logout: ({ state, commit }, data) => {
@@ -73,15 +72,15 @@ const actions = {
 
 		if ( data.mestype == 'message' ) {
 			sessionName = data.accept_name;
-			name = data.accept_name;
+			name = data.send_name;
 			img =  data.card_image,
 			sessionImg = data.card_image,
 			sessionId = data.sender_id;
 		} else {
 			img = data.card_image,
 			sessionImg =  '/chat/images/ren.png',
-			sessionName = data.group_name;
-			name = data.accept_name;
+			sessionName = data.accept_name;
+			name = data.send_name;
 			sessionId = data.session_no;
 		}
 		let saveData = {
@@ -93,7 +92,11 @@ const actions = {
 			name: name,
 			sessionImg: sessionImg,
 			img: img,
-			type: data.mestype
+			type: data.mestype,
+			accept_id: data.to_uid,
+			sendCliend_id: data.accClient_id,
+			accClient_id: data.sendClient_id,
+			acceptMode: 's'
 
 		};
 		saveData.code = data.code;
@@ -113,7 +116,7 @@ const actions = {
 			name = rootState.currentSession.name;
 			img = rootState.currentSession.img;
 		} else if ( data.mestype == 'groupMessage' ) {
-			sessionName = data.group_name;
+			sessionName =  rootState.currentSession.name;
 			sessionImg = '/chat/images/ren.png';
 			name = rootState.currentSession.name;
 			img = rootState.currentSession.img;
@@ -128,7 +131,10 @@ const actions = {
 			sessionName: sessionName,
 			sessionImg: sessionImg,
 			img: img,
-			type: data.mestype
+			type: data.mestype,
+			sendCliend_id: data.accClient_id,
+			accClient_id: data.sendClient_id,
+			acceptMode: 'r'
 
 		};
 		saveData.code = data.code;

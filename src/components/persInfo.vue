@@ -32,6 +32,9 @@ export default {
     	VueQArt
     },
     methods: {
+    	imgFd (img) {
+			this.$emit('imgShow', img)
+    	}
     },
     created () {
     	this.$http.get('/omsIm/demo/json/getList.php?class=userInfo&uid=' + this.currentSession.id)
@@ -61,7 +64,7 @@ export default {
 		<span>扫一扫上面的二维码，加我好友</span>
 	</div>
 </div>
-	<messagesLog :show="showMessageLog" @close="showMessageLog = false" v-if="showMessageLog"></messagesLog>
+	<messagesLog :show="showMessageLog" @imgShow="imgFd" @close="showMessageLog = false" v-if="showMessageLog"></messagesLog>
 	<div class="dialog-title" ref="chatDrop" v-chat-drop>
 	    <i class="backSession" @click="$emit('close')"></i>
 	    <!-- <i class="backSession" @click="clearSession()"></i> -->
@@ -69,22 +72,22 @@ export default {
 	</div>
 	<div class="person-info-body">
 		<div class="person-info-img">
-			<img :src="userInfo.card_image_middle" alt="">
+			<img :src="userInfo.perInfo.card_image_middle" alt="">
 		</div>
 		<div class="person-info-text">
 			<ul>
-				<li><i class="iconfont-chat">&#xe625;</i><span>{{ userInfo.mobile_phone }}</span></li>
-				<li><i class="iconfont-chat">&#xe63f;</i><span>{{ userInfo.tel ? userInfo.tel : '----' }}</span></li>
-				<li><i class="iconfont-chat">&#xe62a;</i><span>{{ userInfo.tel_branch ? userInfo.tel_branch : '----' }}</span></li>
+				<li><i class="iconfont-chat">&#xe625;</i><span>{{ userInfo.perInfo.mobile_phone }}</span></li>
+				<li><i class="iconfont-chat">&#xe63f;</i><span>{{ userInfo.perInfo.tel ? userInfo.perInfo.tel : '----' }}</span></li>
+				<li><i class="iconfont-chat">&#xe62a;</i><span>{{ userInfo.perInfo.tel_branch ? userInfo.perInfo.tel_branch : '----' }}</span></li>
 			</ul>
 		</div>
 		<div style='clear: both'></div>
 		<div id ="qrcode" ref= 'qrcode'></div>
 		<div class="chat-record">
 			<ul>
-				<li  @click="showMessageLog = true"><span>聊天记录: </span><i class="iconfont-chat">&#xe6ce;</i></li>
-				<li @click="qrcodeShow = true"><span>我的二维码: </span><i class="iconfont-chat" >&#xe62b;</i></li>
-				<li></li>
+				<li  @click="showMessageLog = true"><span>聊天记录 </span><i class="iconfont-chat">&#xe6ce;</i></li>
+				<li @click="qrcodeShow = true"><span>二维码 </span><i class="iconfont-chat" >&#xe62b;</i></li>
+				<li><a :href="'http://' + userInfo.website.domain">私人定制网站<i class="iconfont-chat" >&#xe61a;</i></a></li>
 			</ul>
 		</div>
 		<div class="send-message-box">
@@ -170,7 +173,15 @@ export default {
 			li {
 				border-top: 1px solid #ccc;
 				padding: 10px;
+				&:last-child{
+					border-bottom: 1px solid #ccc;
+				}
+				a {
+					width: 100%;
+					display: inline-block;
+				}
 			}
+			
 			span {
 				font-size: 18px;
 			}

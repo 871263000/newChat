@@ -4,6 +4,7 @@ let callbacks = {};
 
 const act = {
 	COME_MESSAGE: (e)=> {
+
 		 let data = JSON.parse(e.data);
 		 callbacks.comeMessage && callbacks.comeMessage(data);
 	},
@@ -31,7 +32,8 @@ const websocket = {
 		act.SEND_MESSAGE(data)
 	},
 	connect () {
-		ws = new WebSocket("ws://" + document.domain + ":7272");
+		// ws = new WebSocket("ws://chat.omso2o.com:7272");
+		ws = new WebSocket("ws:"+ document.domain +":7272");
 		ws.onopen = act.OPEN;
 		// 当有消息时根据消息类型显示不同信息
 		ws.onmessage = act.COME_MESSAGE;

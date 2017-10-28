@@ -24,10 +24,121 @@ export default {
         let MT = parseInt(this.$refs.imgCatBox.style.marginTop) + evt.deltaY;
         this.$refs.imgCatBox.style.marginLeft = Ml + 'px'; 
         this.$refs.imgCatBox.style.marginTop = MT + 'px';  
-      },
+    },
+    pcRotate (direction) {
+        let base = 90;
+        let transform  = this.$refs.img.style.transform;
+        if ( transform ) {
+          let deg = transform.match(/-?\d+/)[0];
+          if (direction === 'left') {
+            base += parseInt(deg);
+          } else {
+             base = parseInt(deg) -  base;
+          }
+          
+          if ( base == 360 || base == -360 ) {
+            base = 0;
+          }
+        } 
+
+        this.$refs.img.style.transform = "rotate("+base+"deg)";
+        this.$refs.img.style.WebkitTransform =  "rotate("+base+"deg)";
+    },
+    voidFun () {
+      return  false;
+    }
   },
   created () {
     this.$nextTick( () => {
+
+
+
+
+let img = this.$refs.img;
+let mm = this.$refs.mm;
+let _this = this;
+ let scrollFunc = function(e) {
+    // e是FF的事件。window.event是chrome/ie/opera的事件
+    let ee = e || window.event;
+    let fx = 0;
+     e.preventDefault();
+    // console.log(ee); //可以看看ee.wheelDelta和e.detail在浏览器中的值；
+    if(ee.wheelDelta) { //IE/Opera/Chrome   
+       fx = ee.wheelDelta;
+    } else if(ee.detail) { //Firefox    
+        fx = ee.detail;
+    }
+
+    let transform = _this.$refs.img.style.transform;
+
+
+    let mul = 0;
+    let rotate = '';
+    let deg = 0;
+    if ( transform ) {
+      rotate = transform.match(/rotate\(\d+deg\)/);
+      let scale = transform.match(/scale\((-?\d+(\.\d+)?)/);
+
+      if ( scale ) {
+        deg = Number(scale[1]).toFixed(1);
+        if ( fx > 0 ) {
+          deg = parseFloat( deg) + 0.1;
+        } else {
+           deg = parseFloat( deg) -0.1;
+        }
+        if ( rotate  ) {
+          _this.$refs.img.style.transform = rotate[0] + ' scale('+deg+', '+deg+')';
+        } else {
+           _this.$refs.img.style.transform = 'scale('+deg+', '+deg+')';
+        }
+      } else {
+        _this.$refs.img.style.transform = rotate[0] + ' scale(1.1, 1.1)';
+        
+      }
+
+    } else {
+      _this.$refs.img.style.transform = 'scale(1.1, 1.1)';
+
+    }
+    // if ( mul ) {
+    //   _this.$refs.img.style.transform = 'scale()';
+    //   console.log(333);
+    // } else {
+
+    // }
+    // console.log(transform);
+}
+
+// /*注册事件*/
+// if(mm.addEventListener) {
+//     //W3C FF
+//     mm.addEventListener('DOMMouseScroll', scrollFunc, false);
+// } 
+// //IE/Opera/Chrome/Safari
+// mm.onmousewheel = img.onmousewheel = scrollFunc; 
+
+
+
+// mm.onmousedown = function (e) {
+//     var e = e || window.event;
+//     // let marginLeft = dropEl.offsetWidth/2;
+//     // console.log(dropEl.offsetWidth);
+//     // console.log(dropEl.offsetLeft);
+//     let disX = e.clientX - img.offsetLeft;
+//     let disY = e.clientY - img.offsetTop;
+//     document.onmousemove = function (e){
+//         var e = e || window.event;
+//          e.preventDefault();
+//         img.style.left = (e.clientX - disX) + 'px';
+//         img.style.top = (e.clientY - disY) + 'px';
+//     };
+//     document.onmouseup = function (){
+//         document.onmousemove = null;
+//         document.onmouseup = null;
+//     };
+// }
+
+
 
       let clientWidth = document.body.clientWidth;
       let clientHeight = document.body.clientHeight;
@@ -39,6 +150,7 @@ export default {
       let imgScale = imgWidth/imgHeight;
 
       if ( imgWidth >  clientWidth || imgHeight > clientHeight  ) {
+
           if ( imgScale > clientScale ) {
               this.$refs.img.width = clientWidth;
               imgWidth = clientWidth;
@@ -48,6 +160,7 @@ export default {
               imgHeight = clientHeight;
               imgWidth = clientHeight * imgScale;
           }
+          
       }
       this.$refs.imgCatBox.style.marginLeft = -imgWidth/2 + 'px'; 
       this.$refs.imgCatBox.style.marginTop = -imgHeight/2 + 'px'; 
@@ -58,18 +171,29 @@ export default {
 </script>
 <template>
 <transition name="modal">
-	<div class="modal-mask" @click ="$emit('close')">
-    <div class="img-cat-box" ref="imgCatBox">
+	<div class="modal-mask" ref="mm" @click.stop ="$emit('close')">
+    <div class="img-cat-box" ref="imgCatBox" @click.stop="voidFun()">
       <img :src="imgSrc" ref="img" v-finger:pinch="pinch"
     v-finger:press-move="pressMove">  
 <!--       	<slot name="body">
         		没有数据！
       	</slot> -->
     </div>
+    <div class="img-handle">
+      <ul class="">
+        <li @click.stop="pcRotate('left')"><span class="left-rotate"><i class="iconfont-chat">&#xe626;</i></span></li>
+        <li @click.stop="pcRotate('right')"><span class="right-rotate"><i class="iconfont-chat">&#xe63c;</i></span></li>
+      </ul>
+    </div>
   </div>
 </transition>
 </template>
 <style lang="less" scoped>
+@media screen and (max-width: 500px) {
+  .img-handle {
+    display: none;
+  }
+}
 .modal-mask {
   position: fixed;
   z-index: 999999;
@@ -80,12 +204,46 @@ export default {
   background-color: #000;
   display: table;
   transition: opacity .3s ease;
+  .img-handle {
+    width: 600px;
+    height: 50px;
+    background-color: rgba(0, 0, 0, 0.5);
+    margin: auto;
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    z-index: 999;
+    margin-left: -300px;
+    box-shadow: 0 0 20px #2d2d2d;
+    border-radius: 7px;
+    text-align:center;
+    ul {
+      display: inline-block;
+      li {
+        width: 160px;
+        height: 50px;
+        line-height: 50px;
+        display: inline-block;
+        text-align: center;
+        cursor: pointer;
+        i {
+          font-size: 33px;
+          color: #fff;
+        }
+      }
+    }
+  }
 }
 .img-cat-box {
   position: fixed;
   z-index: 1;
   top: 50%;
   left: 50%;
+  img {
+        left: 0px;
+    top: 0px;
+    position: absolute;
+  }
 }
 
 .modal-wrapper {

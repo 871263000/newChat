@@ -106,6 +106,9 @@ export default {
             border-radius: 4px;
             outline: none;
             /*background-color: #26292E;*/
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
         }
 
 }
@@ -126,9 +129,15 @@ export default {
         padding: 5px;
         float: left;
     }
+    .online-man {
+        i {
+            color: #000;
+        }
+    }
     .online{
             padding: 5px;
             display: inline-block;
+            color: #000;
         }
     footer {
         margin-top: 10px;
@@ -146,10 +155,10 @@ export default {
         font-size: 16px;
     }
     .online-man-box {
-            width: 219px;
+            width: 254px;
             position: absolute;
             top: 41px;
-            left: 51px;
+            left: 58px;
             z-index: 999999;
             bottom: 0;
             background-color: #fff;
