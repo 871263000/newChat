@@ -31,7 +31,7 @@
 
 .modal-mask {
   position: fixed;
-  z-index: 99999;
+  z-index: 99999999;
   top: 0;
   left: 0;
   width: 100%;
@@ -93,6 +93,7 @@
   bottom: 20px;
   top: 53px;
   width: 100%;
+  padding: 0;
 }
 
 .modal-default-button {
@@ -146,7 +147,7 @@
 @media screen and (min-width: 500px) {
 .modal-mask {
   position: fixed;
-  z-index: 9998;
+  z-index: 999991;
   top: 0;
   left: 0;
   width: 100%;
@@ -190,6 +191,7 @@
   }
 }
 .modal-header{
+  padding: 0;
   text-align: center;
   font-size: 18px;
 }
@@ -202,6 +204,7 @@
 }
 
 .modal-body {
+  padding: 0;
   margin: 20px 0;
 }
 

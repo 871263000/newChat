@@ -7,6 +7,7 @@ import emojis from '../common/emojis';
 import pasteEvnet from '../common/pasteEvnet';
 import { imgReader } from '../common/pasteEvnet';
 import Recorder from 'recorderjs';
+import RTCat from 'realtimecatjs';
 
 import AlloyFinger from 'alloyfinger/alloy_finger' // 手势库
 import AlloyFingerVue from 'alloyfinger/vue/alloy_finger'
@@ -27,6 +28,7 @@ Vue.component('sendImg', function (resolve) {
   // 这些块将通过 Ajax 请求自动下载。
   require(['./sendImgModel'], resolve)
 });
+
 
 export default {
     data() {
@@ -97,37 +99,31 @@ export default {
             let file = '';
             let vm = this;
             let type = '';
-            if (typeof e.target === 'undefined') file = e[0];
-            else file = e.target.files[0];
-            if (typeof file == 'undefined' ) {
+            let files = [];
+            if ( typeof e.target === 'undefined' ) {
+                files = e;
+            } else {
+                files = e.target.files;
+            }
+            if (typeof files == 'undefined' ) {
                 return false;
             };
-            if(/image\/\w+/.test(file.type)){
-                type = 'img';
-            } else {
-                type = 'file';
-            }
-            let size = Math.floor(file.size / 1024);
-            let name = file.name;
-            let nowTime = new Date().getTime();
-            let userId = this.user.id;
-            let start = this.start;
-            if ( file.type.indexOf('quicktime') !== -1 ) {
-                name = file.name.replace('MOV', 'mp4');
-            }
-            // let blkRet = {fname:"61a58PICtPr_1024.jpg",key:"file/4/0/1497527624635/61a58PICtPr_1024.jpg"};
-            // let cd = '';
-            // if ( type == 'file' ) {
-            //     cd = {
-            //         content: '-file-['+blkRet.fname+'|'+'http://7xq4o9.com1.z0.glb.clouddn.com/'+blkRet.key+']',
-            //     };
-            // } else {
-            //      cd = {
-            //         content: '-img-['+blkRet.fname+'|'+'http://7xq4o9.com1.z0.glb.clouddn.com/'+blkRet.key+']',
-            //     };
-            // }
-            // vm.$store.dispatch('sendMessage', {content: cd.content});
-            qn.Qiniu_upload({
+            for (var i = 0; i < files.length; i++) {
+                file = files[i];
+                if(/image\/\w+/.test(file.type)){
+                    type = 'img';
+                } else {
+                    type = 'file';
+                }
+                let size = Math.floor(file.size / 1024);
+                let name = file.name;
+                let nowTime = new Date().getTime();
+                let userId = this.user.id;
+                let start = this.start;
+                if ( file.type.indexOf('quicktime') !== -1 ) {
+                    name = file.name.replace('MOV', 'mp4');
+                }
+                qn.Qiniu_upload({
                     key: '/file/'+userId+ '/' + start + '/'+ nowTime +'/'+ name ,
                     tokenurl: '/chat/uptoken.php',
                     f: file,
@@ -148,6 +144,7 @@ export default {
                     } else {
                     }
                 });
+            }
             // 双向绑定
             // this.$emit('input', this.file);
         },
@@ -268,7 +265,9 @@ export default {
                             reader.onloadend = function () {
                                qiniuUpload(this.result);
                             }
+                            
                             reader.readAsDataURL(file);
+
                         }, function (e) {
                             console.log(e);
                         });
@@ -309,43 +308,6 @@ export default {
                 }
                 return (S4()+S4()+"-"+S4()+"-"+S4()+"-"+S4()+"-"+S4()+S4()+S4());
             }
-            
-            // let qiniuUpload = function (result) {
-            //     let src = result, urlParam, bal;
-            //     var ba = src.substring(22);
-            //     bal = src.substring(22);
-
-            //     var equalIndex= ba.indexOf('=');
-
-            //     if( bal.indexOf('=') > 0 )
-            //     {
-            //         bal = ba.substring(0, equalIndex);
-
-            //     }
-            //     var baLength=bal.length;
-
-            //     var baLength = parseInt(baLength-(baLength/8)*2);
-
-            //     urlParam = 'putb64/' + baLength+'/' + guid() + '.m4a';
-
-            //     qn.getQiniuToken('/chat/uptoken.php', (token) =>{
-            //         _this.uploadBase64(ba, token, urlParam,  (bar) =>{
-            //             // let img = '<img src="http://7xq4o9.com1.z0.glb.clouddn.com/'+bar.key+'">';
-            //             if ( !data.error ) {
-            //                  let cd = '';
-            //                 cd = {
-            //                     content: '-voice-[voice|'+'http://7xq4o9.com1.z0.glb.clouddn.com/'+bar.key+']',
-            //                 };
-            //                 _this.$store.dispatch('sendMessage', {content: cd.content});
-            //             } else {
-            //                 alert('发送失败！请重新发送');
-            //             }
-            //             // this.sendImgSrcU = bar.key;
-            //             // this.sendImgShow = true;
-            //         });
-            //     });
-            // }
-
             let qiniuUpload = function (file) {
                 qn.Qiniu_upload({
                     key: '/voice/voicefile'+guid()+'.m4a',
@@ -387,9 +349,7 @@ export default {
                         });
                     }
                 });
-            }            
-
-            // console.log(gRecorder.getBlob());
+            }
         },
         inFocus () {
             setTimeout("window.scrollTo(0, 1000)",200);
@@ -398,10 +358,54 @@ export default {
         },
         messageImgFd (img) {
             this.$emit('enlarge', img);
+        },
+        video () {
+            if (confirm('你确定要和他视频吗？')) {
+                this.$emit('route', {type: 'videoChat'});
+            }
         }
-
     },
     created () {
+
+            
+
+
+
+
+        // let session;
+        // let stream = new RTCat.Stream();
+
+        // stream.on("accepted", function () {
+
+        //     stream.play("local");
+        //     session = new RTCat.Session('27b4eb70-d5e8-42a1-9373-275af0218d3d');
+        //     session.on("connected", function () {
+        //             console.log(2222);
+        //         session.on('remote', function (receiver) {
+        //             console.log(45555);
+        //             receiver.on('stream',function(stream){
+        //                 console.log(444);
+        //                 remote_stream = stream;
+        //                 var div = document.createElement('div');
+        //                 div.setAttribute('id','video-'+receiver.getId());
+        //                 document.querySelector('body').appendChild(div);
+        //                 stream.play('video-'+receiver.getId());
+        //             });
+
+        //         }).on('in', function (token) {
+        //             // 建立连接成功后,发送 stream
+        //             session.sendTo({to:token,stream:stream})
+        //         });
+        //         session.on("out", function (token) {
+        //             console.log(token);
+        //         })
+
+        //         // 建立连接成功后,发送 stream
+        //         session.send({stream:stream});
+        //     });
+
+        //     session.connect();
+        // }).init();
         let isMobile = function(){
             let userAgentInfo = navigator.userAgent;
             let Agents = new Array("Android", "iPhone", "SymbianOS", "Windows Phone", "iPad", "iPod")
@@ -435,6 +439,7 @@ export default {
 
 <template>
 <div class="text-box">
+    <div id="media-list"></div>
     <div class="text"  v-if="start">
     <messagesLog :show="showMessageLog" @imgShow="messageImgFd" @close="showMessageLog = false" v-if="showMessageLog"></messagesLog>
     <sendImg v-if="sendImgShow" @close="sendImgShow = false" :src="sendImgSrcU">
@@ -474,7 +479,9 @@ export default {
            <!--  // 工具  表情 -->
                 <li @click.stop="emShow = !emShow"><i class="iconfont-chat">&#xe62c;</i></li>
             <!-- 文件上传  -->
-                <li><label for="chat-file"><img src="../assets/wenjian.png" alt=""></label><input type="file" id="chat-file" style="display: none" @change="fileUpload($event)"></li>
+                <li><label for="chat-file"><img src="../assets/wenjian.png" alt=""></label><input type="file" id="chat-file" style="display: none" @change="fileUpload($event)" multiple></li>
+                
+                <!-- <li @click="video()"><i class="iconfont-chat">&#xe611;</i></li> -->
                 <li title="聊天记录" @click="showMessageLog = true" style="float:right;margin-right: 20px;"><img src="../assets/ltjl.png" alt="聊天记录"></li>
             </ul>
         </div>
@@ -490,7 +497,10 @@ export default {
         </div>
         <div class="textarea-box" v-show="!luyin">
             <textarea placeholder="" v-if="!iphoneText" v-model="content" ref="textarea" @keydown.enter="onKeydown" @paste="pasteOver($event)" @drop="dropFile($event)"></textarea>
-            <input placeholder="" v-if="iphoneText" @focus="inFocus()" v-model="content" id="chat-input"  ref="textarea" @keydown.enter="onKeydown" @paste="pasteOver()">
+            <textarea v-if="iphoneText" @focus="inFocus()" v-model="content" id="chat-input"  ref="textarea"  @keydown.enter="onKeydown" @paste="pasteOver()">
+                
+            </textarea>
+            <!-- <input placeholder="" v-if="iphoneText" @focus="inFocus()" v-model="content" id="chat-input"  ref="textarea"  @keydown.enter="onKeydown" @paste="pasteOver()"> -->
             
         </div>
          <!-- 手机表情 -->
@@ -502,7 +512,7 @@ export default {
                 <!-- 手机发送图片 -->
                 <label class="mul-function" for="chat-file" v-if="!content && iphoneText"><i class="iconfont-chat">&#xe60b;</i></label>
 
-                <input type="file" id="chat-file" style="display: none"  v-if="iphoneText" @change="fileUpload($event)">
+                <input type="file" id="chat-file" style="display: none"  v-if="iphoneText" @change="fileUpload($event)" multiple>
 
                 <span class="send-btn" v-if="content || !iphoneText" @click="send()">发送</span>
                 <div class="send-select-box" v-if="!iphoneText" @click.stop="selShow = !selShow">
@@ -715,18 +725,23 @@ export default {
         flex-grow: 1;
         flex-basis: 200px;
     }
-    input {
-            outline: none;
+    #chat-input {
+        outline: none;
+        padding: 10px 0 0 0;
         border-radius: 6px;
-        overflow: hidden;
         width: 200%;
         height: 200%;
         border: 1px solid #7d7e83;
+        -webkit-transform: scale(.5);
         transform: scale(.5);
+        -webkit-transform-origin: 0 0;
         transform-origin: 0 0;
         font-size: 30px;
         -webkit-appearance: none;
+        -moz-appearance: none;
         appearance: none;
+        resize: none;
+        line-height: 47px;
     }
     .send-act {
         color: #7d7e83;

@@ -2,11 +2,11 @@
 
 @font-face {
   font-family: 'iconfont-chat';  /* project id 341696 */
-  src: url('//at.alicdn.com/t/font_341696_k8eq8gqocjrod2t9.eot');
-  src: url('//at.alicdn.com/t/font_341696_k8eq8gqocjrod2t9.eot?#iefix') format('embedded-opentype'),
-  url('//at.alicdn.com/t/font_341696_k8eq8gqocjrod2t9.woff') format('woff'),
-  url('//at.alicdn.com/t/font_341696_k8eq8gqocjrod2t9.ttf') format('truetype'),
-  url('//at.alicdn.com/t/font_341696_k8eq8gqocjrod2t9.svg#iconfont') format('svg');
+  src: url('//at.alicdn.com/t/font_341696_ygd333a3yn7phkt9.eot');
+  src: url('//at.alicdn.com/t/font_341696_ygd333a3yn7phkt9.eot?#iefix') format('embedded-opentype'),
+  url('//at.alicdn.com/t/font_341696_ygd333a3yn7phkt9.woff') format('woff'),
+  url('//at.alicdn.com/t/font_341696_ygd333a3yn7phkt9.ttf') format('truetype'),
+  url('//at.alicdn.com/t/font_341696_ygd333a3yn7phkt9.svg#iconfont') format('svg');
 }
 .iconfont-chat {
   font-family:"iconfont-chat" !important;

@@ -159,7 +159,7 @@ export default {
             position: absolute;
             top: 41px;
             left: 58px;
-            z-index: 999999;
+            z-index: 99999;
             bottom: 0;
             background-color: #fff;
             color: #000;

@@ -53,7 +53,7 @@ export default {
     },
     computed:  mapState({
         user: (state) => state.user,
-        session: (state) => state.sessions.find(session => session.id === state.currentSession.id),
+        session: (state) => state.sessions.find(session => session.id === state.currentSession.id && session.type == state.currentSessionType),
         dialogName: (state) => {
             return state.currentSession.name;
         },
@@ -422,20 +422,8 @@ Vue.directive('scroll-bottom', function(el) {
         bottom: 0;
         top:50px;
         width:100%;
-        overflow-y: auto;
-        &::-webkit-scrollbar{width:100px ;display: block;}
-        &::-webkit-scrollbar{width:10px;height:10px}
-        &::-webkit-scrollbar-track{background:rgba(0,0,0,0)}
-        &::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.5);border-radius:10px}
-        &::-webkit-scrollbar-corner{background:#82afff}
-        &::-webkit-scrollbar-resizer{background:#ff0bee}
-        &::scrollbar{width:100px ;display: block;}
-        &::scrollbar{width:10px;height:10px}
-
-        &::scrollbar-track{background:rgba(0,0,0,0)}
-        &::scrollbar-thumb{background:rgba(0,0,0,0.5);border-radius:10px}
-        &::scrollbar-corner{background:#82afff}
-        &::scrollbar-resizer{background:#ff0bee}
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
         li {
             padding: 10px;
         }

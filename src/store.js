@@ -8,6 +8,7 @@ import Websocket from './Websocket';
 import { reverse } from './messageHandel';
 import messageHandle from './messageHandel';
 import  events from './modules/events';
+import  video from './modules/video';
 import axios from 'axios'
 
 Vue.use(Vuex);
@@ -59,6 +60,9 @@ const store = new Vuex.Store({
             desktop: 0
         },
         iPhone: false,
+        videoResAnswerCallBack: function () {
+
+        }
     },
     mutations: {
         INIT_DATA (state, initData) {
@@ -257,6 +261,10 @@ const store = new Vuex.Store({
             // };
 
         },
+        MES_CLOSE ({state, sessions}, data) {
+            let session = sessions.find(item => item.id == data.session_no && item.type === data.message_type );
+            session.messageNum = 0;
+        },
         // 选择会话
         SELECT_SESSION (state, data) {
 
@@ -352,6 +360,12 @@ const store = new Vuex.Store({
             };
             Websocket.sendMessage(sendMessage);
         },
+        videoRes: ({commit, state}, data) => {
+            Websocket.sendMessage({'type': 'videoChat', to_uid: state.currentSession.id});
+        },
+        videoResAnswerIng: ({state}, data) => {
+            Websocket.sendMessage({'type': 'videoResAnswer', to_uid: data.to_uid, token: data.token });
+        },
          batchSendMessage: ({ commit, state }, data) => {
             let sendMessage;
 
@@ -433,7 +447,8 @@ const store = new Vuex.Store({
         friendsStateChange: ({commit}, uid) => commit('FRIENDS_STATE_CHANGE', uid),
     },
     modules: {
-        events
+        events,
+        video
     }
 });
 

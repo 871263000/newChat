@@ -1,4 +1,3 @@
-import messageHandel from '../messageHandel';
 import showMsgNotification from '../common/showMsgNotification';
 
 // const selfLogin = 'SELF_LOGIN';
@@ -12,7 +11,9 @@ let voice = function() {
 const state = {
   complete: false,
   onlineMan: 0,
-  onlineList: []
+  onlineList: [],
+  videoChatShow: false,
+  videoChatInfo: {}
 }
 
 const getters = {
@@ -40,6 +41,9 @@ const mutations = {
 	},
 	LOGOUT (state) {
 		state.onlineMan --;
+	},
+	VCSC (state) {
+		state.videoChatShow = !state.videoChatShow;
 	}
 }
 const actions = {
@@ -71,7 +75,7 @@ const actions = {
 		let name, sessionId,sessionName,img, sessionImg;
 
 		if ( data.mestype == 'message' ) {
-			sessionName = data.accept_name;
+			sessionName = data.send_name;
 			name = data.send_name;
 			img =  data.card_image,
 			sessionImg = data.card_image,
@@ -104,9 +108,6 @@ const actions = {
 		voice();
 		showMsgNotification('聊天消息', data.message_content, sessionImg);
 		commit('SEND_MESSAGE', saveData);
-	},
-	mesClose: (data)=> {
-
 	},
 	resSayUid: ({ state, commit, rootState }, data) => {
 		let sessionImg, sessionName, name, img;
@@ -141,6 +142,21 @@ const actions = {
 		saveData.msg = data.msg;
 		// voice();
 		commit('SEND_MESSAGE', saveData);
+	},
+	mes_close ({ state, commit, rootState }, data) {
+		commit('MES_CLOSE', data);
+	},
+	videoChat ({ state, commit, rootState }, data) {
+		state.videoChatShow = true;
+		state.videoChatInfo = data;
+
+	},
+	videoResAnswerRes ({ state, commit, rootState }, data) {
+		commit('STATUS_CHANGE', {status: 3});
+		commit('GET_TOKEN', data);
+	},
+	videoChatShowChange ({commit}) {
+		commit('VCSC');
 	}
 }
 const events = {

@@ -166,10 +166,10 @@ export default {
 @media screen and (max-width: 500px) {
 
 .person-info{
-	position: absolute;
+	position: fixed;
 	top: 0;
 	left: 0;
-	height: 100%;
+	bottom: 0;
 	width: 100%;
 	z-index: 99999;
 	background-color: #fff;
@@ -267,10 +267,19 @@ export default {
 	}
 	.iPhone-delGroup {
 		cursor: pointer;
-		text-align:center;
-		margin: 10px;
+	    text-align: center;
+	    margin: 10px;
+	    position: absolute;
+	    bottom: 20px;
+	    left: 0;
+	    margin: 0;
+	    text-align: center;
+	    width: 100%;
+
 		span {
 			color: #ca3f3f;
+			padding: 10px;
+    		border: 1px solid #ccc;
 		}
 	}
 }

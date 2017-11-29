@@ -1,6 +1,9 @@
 
 <script>
+import Vue from 'vue';
+
 import { mapState } from 'vuex'
+
 export default {
     data: function () {
         return {
@@ -59,6 +62,9 @@ export default {
             userSet[i] = userSet[i] == 0 ? 1 : 0;
             this.$store.dispatch('userSet', i, userSet[i]);
             localStorage.setItem('chat-set', JSON.stringify(userSet));
+        },
+        addFriend () {
+
         }
     },
     created () {
@@ -99,6 +105,7 @@ export default {
             <transition name="fade">
                 <ul class="chat-set-list" v-if="setShow">
                     <li><a target="_blank" href="/chat/new_groupChat.php">新建群聊</a></li>
+                    <li @click="$emit('route',{}, 'addFriend')"><span>添加好友</span></li>
                     <li v-for="(set, index) in sets" @click.stop="setUser(index)">{{set[userSet[index]]}}</li>
                 </ul>
              </transition>
@@ -205,6 +212,9 @@ export default {
                 box-shadow: 0 6px 12px rgba(0,0,0,.175);
                 border-radius: 5px;
                 z-index: 99;
+                li {
+                    border-top: 1px solid #ccc;
+                }
             }
         }
         .chat-set i{

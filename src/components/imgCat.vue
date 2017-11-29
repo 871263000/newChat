@@ -25,6 +25,9 @@ export default {
         this.$refs.imgCatBox.style.marginLeft = Ml + 'px'; 
         this.$refs.imgCatBox.style.marginTop = MT + 'px';  
     },
+    tap () {
+        this.$emit('close');
+    },
     pcRotate (direction) {
         let base = 90;
         let transform  = this.$refs.img.style.transform;
@@ -50,93 +53,88 @@ export default {
   },
   created () {
     this.$nextTick( () => {
-
-
-
-
-let img = this.$refs.img;
-let mm = this.$refs.mm;
-let _this = this;
- let scrollFunc = function(e) {
-    // e是FF的事件。window.event是chrome/ie/opera的事件
-    let ee = e || window.event;
-    let fx = 0;
-     e.preventDefault();
-    // console.log(ee); //可以看看ee.wheelDelta和e.detail在浏览器中的值；
-    if(ee.wheelDelta) { //IE/Opera/Chrome   
-       fx = ee.wheelDelta;
-    } else if(ee.detail) { //Firefox    
-        fx = ee.detail;
-    }
-
-    let transform = _this.$refs.img.style.transform;
-
-
-    let mul = 0;
-    let rotate = '';
-    let deg = 0;
-    if ( transform ) {
-      rotate = transform.match(/rotate\(\d+deg\)/);
-      let scale = transform.match(/scale\((-?\d+(\.\d+)?)/);
-
-      if ( scale ) {
-        deg = Number(scale[1]).toFixed(1);
-        if ( fx > 0 ) {
-          deg = parseFloat( deg) + 0.1;
-        } else {
-           deg = parseFloat( deg) -0.1;
+      let img = this.$refs.img;
+      let mm = this.$refs.mm;
+      let _this = this;
+      let scrollFunc = function(e) {
+        // e是FF的事件。window.event是chrome/ie/opera的事件
+        let ee = e || window.event;
+        let fx = 0;
+         e.preventDefault();
+        // console.log(ee); //可以看看ee.wheelDelta和e.detail在浏览器中的值；
+        if(ee.wheelDelta) { //IE/Opera/Chrome   
+           fx = ee.wheelDelta;
+        } else if(ee.detail) { //Firefox    
+            fx = ee.detail;
         }
-        if ( rotate  ) {
-          _this.$refs.img.style.transform = rotate[0] + ' scale('+deg+', '+deg+')';
+
+        let transform = _this.$refs.img.style.transform;
+
+
+        let mul = 0;
+        let rotate = '';
+        let deg = 0;
+        if ( transform ) {
+          rotate = transform.match(/rotate\(-?\d+deg\)/);
+          let scale = transform.match(/scale\((-?\d+(\.\d+)?)/);
+          if ( scale ) {
+            deg = Number(scale[1]).toFixed(1);
+            if ( fx > 0 ) {
+              deg = parseFloat( deg) + 0.1;
+            } else {
+               deg = parseFloat( deg) -0.1;
+            }
+            if ( rotate  ) {
+              _this.$refs.img.style.transform = rotate[0] + ' scale('+deg+', '+deg+')';
+            } else {
+               _this.$refs.img.style.transform = 'scale('+deg+', '+deg+')';
+            }
+          } else {
+            _this.$refs.img.style.transform = rotate[0] + ' scale(1.1, 1.1)';
+            
+          }
+
         } else {
-           _this.$refs.img.style.transform = 'scale('+deg+', '+deg+')';
+          _this.$refs.img.style.transform = 'scale(1.1, 1.1)';
+
         }
-      } else {
-        _this.$refs.img.style.transform = rotate[0] + ' scale(1.1, 1.1)';
-        
+        // if ( mul ) {
+        //   _this.$refs.img.style.transform = 'scale()';
+        //   console.log(333);
+        // } else {
+
+        // }
+        // console.log(transform);
       }
 
-    } else {
-      _this.$refs.img.style.transform = 'scale(1.1, 1.1)';
-
-    }
-    // if ( mul ) {
-    //   _this.$refs.img.style.transform = 'scale()';
-    //   console.log(333);
-    // } else {
-
-    // }
-    // console.log(transform);
-}
-
-// /*注册事件*/
-// if(mm.addEventListener) {
-//     //W3C FF
-//     mm.addEventListener('DOMMouseScroll', scrollFunc, false);
-// } 
-// //IE/Opera/Chrome/Safari
-// mm.onmousewheel = img.onmousewheel = scrollFunc; 
+      // /*注册事件*/
+      if(mm.addEventListener) {
+          //W3C FF
+          mm.addEventListener('DOMMouseScroll', scrollFunc, false);
+      } 
+      //IE/Opera/Chrome/Safari
+      mm.onmousewheel = img.onmousewheel = scrollFunc; 
 
 
 
-// mm.onmousedown = function (e) {
-//     var e = e || window.event;
-//     // let marginLeft = dropEl.offsetWidth/2;
-//     // console.log(dropEl.offsetWidth);
-//     // console.log(dropEl.offsetLeft);
-//     let disX = e.clientX - img.offsetLeft;
-//     let disY = e.clientY - img.offsetTop;
-//     document.onmousemove = function (e){
-//         var e = e || window.event;
-//          e.preventDefault();
-//         img.style.left = (e.clientX - disX) + 'px';
-//         img.style.top = (e.clientY - disY) + 'px';
-//     };
-//     document.onmouseup = function (){
-//         document.onmousemove = null;
-//         document.onmouseup = null;
-//     };
-// }
+      mm.onmousedown = function (e) { 
+          var e = e || window.event;
+          // let marginLeft = dropEl.offsetWidth/2;
+          // console.log(dropEl.offsetWidth);
+          // console.log(dropEl.offsetLeft);
+          let disX = e.clientX - img.offsetLeft;
+          let disY = e.clientY - img.offsetTop;
+          document.onmousemove = function (e){
+              var e = e || window.event;
+               e.preventDefault();
+              img.style.left = (e.clientX - disX) + 'px';
+              img.style.top = (e.clientY - disY) + 'px';
+          };
+          document.onmouseup = function (){
+              document.onmousemove = null;
+              document.onmouseup = null;
+          };
+      }
 
 
 
@@ -174,7 +172,7 @@ let _this = this;
 	<div class="modal-mask" ref="mm" @click.stop ="$emit('close')">
     <div class="img-cat-box" ref="imgCatBox" @click.stop="voidFun()">
       <img :src="imgSrc" ref="img" v-finger:pinch="pinch"
-    v-finger:press-move="pressMove">  
+    v-finger:press-move="pressMove" v-finger:tap="tap">  
 <!--       	<slot name="body">
         		没有数据！
       	</slot> -->

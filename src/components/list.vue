@@ -4,6 +4,12 @@ import { mapState } from 'vuex';
 import friendsList from './friendsList';
 import directives from '../common/directives';
 
+import AlloyFinger from 'alloyfinger/alloy_finger' // 手势库
+import AlloyFingerVue from 'alloyfinger/vue/alloy_finger'
+Vue.use(AlloyFingerVue, {
+  AlloyFinger
+})
+
 directives(Vue);
 
 Vue.component('friendApply', function (resolve) {
@@ -76,7 +82,44 @@ export default {
             if ( type == 'message' ) {
                 this.$emit('perInfoShow');
             }
-        }
+        },
+        swipe (evt) {
+            let el = evt.path[3];
+            const WIDTH = 80;
+            if ( evt.path[3].nodeName == 'LI' ) {
+                el = evt.path[3];
+            } else if ( evt.path[4].nodeName == 'LI' ) {
+                el = evt.path[4];
+            }
+            console.log(evt);
+
+            let direction = evt.direction;
+            if ( direction == 'Left' ) {
+                el.style.left = '-' +WIDTH + 'px';
+            } else if( direction == 'Right' ) {
+                el.style.left =  '0px';
+            }
+            // let elLeft = el.style.left;
+            // let deltaX = evt.deltaX;
+            // console.log(parseInt(elLeft));
+            // if ( deltaX > 0 &&  Math.abs(parseInt(elLeft)) < WIDTH/2 ) {
+            //     el.style.left = 0;
+            //     return ;
+            // } else if ( deltaX < 0 && Math.abs(parseInt(elLeft))> WIDTH/2) {
+            //     el.style.left = WIDTH;
+            //     return ;
+            // }
+            // if ( elLeft ) {
+            //     el.style.left = ( parseInt(elLeft) + deltaX )+ 'px';
+            // } else {
+            //     el.style.left = deltaX + 'px';
+            // }
+            
+            // console.log(el);
+        },
+        delzjlxr (index) {
+            this.$store.dispatch('delSession', index);
+        } 
     },
     filters: {
         // 将日期过滤为 hour:minutes
@@ -207,7 +250,7 @@ Vue.directive('oncontextmenu', {
 
             <li v-if="sessions.length <=0 " style="text-align: center;">还没有最近联系人！</li>
             <li v-for="(item, index) in sessions"
-            :class="{ active: item.id === currentId }" @click="selectSession(item.id, item.type, item.user.name, item.user.img)"  @mousedown.3 ="mousedown(item, index, $event)">
+            :class="{ active: item.id === currentId && item.type === currentType }" @click="selectSession(item.id, item.type, item.user.name, item.user.img)"  @mousedown.3 ="mousedown(item, index, $event)"  v-finger:swipe="swipe" :key="index">
             <div class="list-info">
                 <div class="icon-avatar" @click="perInfo(item.type)">
                     <img class="avatar"  width="48" height="48" :alt="item.user.name" :src="item.user.img">
@@ -228,12 +271,16 @@ Vue.directive('oncontextmenu', {
                 
             </div>
                 <span class="message-num" v-if="item.messageNum" >{{ item.messageNum }}</span>
+                <div class="list-del" @click.stop="delzjlxr(index)">
+                    <span>删除</span>
+                </div>
             </li>
         </ul>
     </div>
     <!-- 好友列表 -->
     <div v-if = "2 == indexTab" class="friend-list-box">
         <ul class="friend-list list-item">
+            <li class="friend-add" @click="$emit('route', {}, 'friendAdd')"><span class="friend-add-icon">+</span>添加好友</li>
             <li v-for="(item,index) in friends" class="chat-friend-list" >
                 <friends-list :item="item" @fmainShow="$emit('mainShow')" @friendsApple="friendApply"></friends-list>
                 <!-- <img class="avatar"  width="30" height="30" >
@@ -279,6 +326,7 @@ Vue.directive('oncontextmenu', {
             ul {
                 li {
                     position: relative;
+                    left: 0;
                 }
                 li:before{
                 content: "";
@@ -337,8 +385,22 @@ Vue.directive('oncontextmenu', {
         }
 
     }
+    .list-del {
+        position: absolute;
+        top: 0;
+        right: -80px;
+        height: 100%;
+        line-height: 60px;
+        text-align: center;
+        color: #fff;
+        width: 80px;
+        background-color: #d26d6d;
+    }
 }
 @media screen and (min-width: 500px) {
+    .list-del {
+            display: none;
+        }
     .chat-friend-list {
         position: relative;
         p.list-name {
@@ -352,6 +414,7 @@ Vue.directive('oncontextmenu', {
             position: absolute;
             top: 4px;
         }
+
         li {
             position:relative;
             padding: 12px;
@@ -437,10 +500,10 @@ Vue.directive('oncontextmenu', {
         .list-item {
 
             position: absolute;
-            bottom: 96px;
+            bottom: 0;
             top: 0;
             width: 100%;
-            overflow: auto;
+            overflow-x: hidden;
             -webkit-overflow-scrolling: touch;
             
         }
@@ -449,6 +512,14 @@ Vue.directive('oncontextmenu', {
     }
     .search,.group-list-box, friend-list-box, #zjlxr-box{
         height: 100%;
+
+    }
+    .friend-add {
+        .friend-add-icon {
+            font-size: 28px;
+            padding: 5px;
+        }
+        padding: 10px;
     }
     #zjlxr li:not(:first-child):before{
         content: "";
@@ -658,7 +729,7 @@ Vue.directive('oncontextmenu', {
         white-space: nowrap;
         width: 100%;
         left: 0;
-        padding-left: 63px;
+        padding-left: 73px;
     }
     .friendApply-box {
         position: absolute;
@@ -690,6 +761,9 @@ Vue.directive('oncontextmenu', {
             height: 517px;
             overflow: auto;
         }
+    .friend-add {
+        display: none;
+    }
     .search { 
         position: absolute;background-color: #e8e8e8;width: 252px;
         z-index: 999;height: 517px;overflow: auto;
@@ -703,6 +777,7 @@ Vue.directive('oncontextmenu', {
                 border: 4px solid #fff;
             }
         } 
+
         .search-list-name {
             padding-left: 10px;
             background-color: #fff;

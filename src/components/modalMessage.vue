@@ -245,9 +245,9 @@ Vue.directive('scroll-bottom', function(el) {
 }
 @media screen and (min-width: 500px) {
     .message-log{
-            padding: 5px;
-            overflow: auto;
-            height: 400px;
+        padding: 5px;
+        overflow: auto;
+        height: 400px;
     }
 }
 

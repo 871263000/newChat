@@ -49,6 +49,9 @@ export default {
     				// this.show= false;
     				this.$store.dispatch('friendDel', this.applyerId);
     			}
+    			o.para = 'del';
+    		} else if ( p == 'n' ) {
+    			alert('已发送！');
     			o.para = 'refuse';
     		}
     		this.postAjax(o).then(res=> {
@@ -122,7 +125,9 @@ export default {
 		</div>
 		<div style='clear: both'></div>
 		<div class="send-message-box">
-			<span class="send-message" @click="adopt('a')">通过验证</span><span class="send-message friendD" @click="adopt('d')">删除</span>
+			<span class="send-message" @click="adopt('a')">通过验证</span>
+			<span class="send-message friendD" @click="adopt('n')">不同意</span>
+			<span class="send-message friendD" @click="adopt('d')">删除</span>
 		</div>
 	</div>
 </div>

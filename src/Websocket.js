@@ -28,7 +28,6 @@ const websocket = {
 		callbacks[name] = callback;
 	},
 	sendMessage: (data) => {
-
 		act.SEND_MESSAGE(data)
 	},
 	connect () {
@@ -39,7 +38,7 @@ const websocket = {
 		ws.onmessage = act.COME_MESSAGE;
 		let self = this;
 		ws.onclose = () =>{
-			self.connect();
+			// self.connect();
 		    console.log("连接关闭，定时重连");
 		};
 		ws.onerror = function() {

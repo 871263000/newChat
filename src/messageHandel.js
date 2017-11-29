@@ -33,7 +33,7 @@ export const reverse = function ( content ) {
       let img = '<img width="20px"  src="http://www.omso2o.com/chatStatic/emoji/'+em.num+'@2x.png" alt="'+em.name+'" />'
       return img;
     }).
-    replace(/-(file|img|video)-\[(.*?)\]/g, function (f, i, z) {
+    replace(/-(file|img|video)-\[(.*?)\]$/g, function (f, i, z) {
       let m = '';
       let zArr = z.split('|');
 

@@ -4,8 +4,14 @@
         <i class="mesNum" v-if="mesNum > 0">
             {{mesNum > 99 ? '99+' : mesNum }}
         </i>
-        <i><img src="./assets/liaotian.png" alt="" ></i>
+        <i><img src="./assets/liaotian.png" alt=""></i>
     </div>
+    <searchOrg v-if="searchFriendShow" @close="searchFriendShow = !searchFriendShow"></searchOrg>
+    <video-chat v-if="videoChat" :videoChatType="videoChatType" @route="controller"></video-chat>
+    <video-res v-if="videoChatShow" :videoChatInfo="videoChatInfo" @route="videoResConttroll" ></video-res>
+    <video-chat-ing v-if="videoChatIngShow" :videochatIngInfo="videochatIngInfo" @route="videoChatIng" ></video-chat-ing>
+        
+    </video-res>
     <transition name="show">
         <div id="chat-main"  class="chat-main" ref="chatDrop" v-if="chatMainShow">
             <div v-if="!complete" class="mask">
@@ -14,12 +20,12 @@
                 </div>
             </div>
              <div class="term">
-                <menuList></menuList>
+                <menuList @route="uiShow"></menuList>
             </div>
 
             <div class="sidebar">
                 <card @mainShow="mainShow = false"></card>
-                <list @mainShow="mainShow = false" @perInfoShow="persInfo = true"></list>
+                <list @mainShow="mainShow = false" @route="listR" @perInfoShow="persInfo = true"></list>
             </div>
             <div class="">
                 
@@ -39,7 +45,7 @@
                 <!-- 个人信息 -->
                 <persInfo v-if="persInfo" @imgShow="dImgShow = true" @close="persInfo = false"></persInfo>
 
-                <TextAre @enlarge="imgShow"></TextAre>
+                <TextAre @enlarge="imgShow" @route="controller"></TextAre>
             </div>
               <!--  隐藏聊天 -->
             <div class="dialog-title" v-if="mainShow">
@@ -73,6 +79,19 @@ Vue.component('imgFd', function (resolve) {
 Vue.component('persInfo', function (resolve) {
     require(['./components/persInfo'], resolve);
 });
+Vue.component('searchOrg', function (resolve) {
+    require(['./components/searchOrg'], resolve);
+});
+
+Vue.component('videoChat', function ( resolve ) {
+    require(['./components/videoChat'], resolve);
+});
+Vue.component('video-res', function ( resolve ) {
+    require(['./components/videoRes'], resolve);
+});
+Vue.component('video-chat-ing', function ( resolve ) {
+    require(['./components/videoChatIng'], resolve);
+});
 
 // const Loadmore = require('vue-loadmore').default;
 Vue.use(vueR);
@@ -90,7 +109,15 @@ export default {
                 mesNum += m.messageNum;
             });
             return mesNum;
-        }
+        },
+        videoChatShow: (state) => {
+            return state.events.videoChatShow;
+
+        },
+        videoChatInfo: (state) => {
+            return state.events.videoChatInfo;
+        } 
+
     }),
     data () {
         return {
@@ -99,7 +126,12 @@ export default {
             mainShow: false,
             dImgShow: false,
             imgSrc: '',
-            persInfo: false
+            persInfo: false,
+            searchFriendShow: false,
+            videoChat: false,
+            videoChatType:'',
+            videochatIngInfo: {},
+            videoChatIngShow: false
         }
     },
     mounted () {
@@ -116,7 +148,7 @@ export default {
             this.iPhone = true;
             this.mainShow = true;
         }
-        document.onkeydown =  (e) => {
+        document.onkeydown =  (e) => {  
             if (e.keyCode == 27 ) {
                 this.chatMainShow = !this.chatMainShow;
             };
@@ -143,6 +175,43 @@ export default {
         imgShow (img) {
             this.imgSrc = img;
             this.dImgShow = true;
+        },
+        uiShow (parm, type) {
+            if ( type == 'addFriend' ) {
+                this.searchFriendShow = true;
+            }
+        },
+        listR (para, type) {
+            if ( type == 'friendAdd' ) {
+                this.searchFriendShow = true;
+            }
+            console.log(type);
+        },
+        controller (data) {
+            if ( data.type == 'videoChat') {
+                this.videoChat = true;
+                this.videoChatType = 'videoChat';
+            }
+            if ( data.type == 'close' ) {
+                this.videoChat = false;
+            }
+            if ( data.type == 'videoShow' ) {
+                this.videoChatIngShow = true;
+                this.videochatIngInfo = data.para;
+            }
+        },
+        videoResConttroll (data) {
+            if ( data.type == 'close' ) {
+                this.$store.dispatch('videoChatShowChange');
+            } else if (data.type == 'videoShow') {
+                this.videoChatIngShow = true;
+                this.videochatIngInfo = data.para;
+            }
+        },
+        videoChatIng (data) {
+            if ( data.type == 'close' ) {
+                 this.videoChatIngShow = false;
+            }
         }
     },
 }
@@ -183,13 +252,13 @@ img{
     }
     #chat-main, .main{
         width: 100%;
-        height: 100%;
-        height: 100%;
         position: fixed;
         top: 0;
         left: 0;
+        bottom: 0;
         z-index: 9999999;
         background-color:#fff;
+        overflow: hidden;
     }
     .chat-min {
         position: fixed;
@@ -224,15 +293,16 @@ img{
         top: 46px;
         left: 0;
         width: 100%;
-        height: 100%;
+        bottom: 50px;
     }
     .windowList{
         display: none;
     }
     .main{
-        position:relative;
+        position:absolute;
         top: 0;
         left: 0;
+        bottom: 0;
         z-index: 999;
         background-color: #efeff4;
     }

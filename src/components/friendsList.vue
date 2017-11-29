@@ -121,17 +121,6 @@ export default {
             z-index: 222;
             top: 10px;
         }
-        .friendsNum {
-            position: absolute;
-            display: line-block;
-            line-height: 20px;
-            color: #000;
-            text-align: center;
-            right: 20px;
-            /* right: 10px; */
-            z-index: 222;
-            top: 12px;
-        }
         .friendNew {
             width: 10px;
             height: 10px;
@@ -212,17 +201,6 @@ export default {
             /* right: 10px; */
             z-index: 222;
             top: 10px;
-        }
-        .friendsNum {
-            position: absolute;
-            display: line-block;
-            line-height: 20px;
-            color: #fff;
-            text-align: center;
-            right: 20px;
-            /* right: 10px; */
-            z-index: 222;
-            top: 12px;
         }
 
     }
