@@ -5,7 +5,7 @@ export default {
 	name: 'friend-list',
     data () {
         return {
-            openFun: true,
+            openFun: false,
             data: [],
         }
     },
@@ -24,8 +24,7 @@ export default {
     },
     watch: {
         data (val, odlVal) {
-            
-            this.$emit('addIds', val, odlVal);
+            this.$emit('addIds', val, this.index);
         }
     }
 }
@@ -40,9 +39,9 @@ export default {
 		</div>
 	    <ul v-if="openFun">
 	         <li v-for="list in item.list">
-             <input type="checkbox" v-model="data" :value="list.id">
+             <input type="checkbox" v-model="data" :value="{'id': list.id, 'type': item.type, index: index}">
 	             <img :src="list.avatar" alt="" width="30" height="30">
-	            <p class="name" style=" display: inline-block;font-size: 18px;margin: 0;width: 100px;text-overflow: ellipsis;white-space: nowrap;">{{ list.username }}</p>
+	            <p class="name" style=" display: inline-block;font-size: 18px;margin: 0;width: 100px;text-overflow: ellipsis;white-space: nowrap;">{{ item.type == 'm'?list.username: list.groupname }}</p>
 	        </li>
 	        <li v-if="item.list.length == 0">没有数据！</li>
 	    </ul>

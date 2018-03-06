@@ -36,17 +36,6 @@ export default {
             return newFriendNum;
         }
     }),
-    // name: 'menu',
-    // data: function () {
-    // },
-	// vuex: {
- //        actions: actions,
- //        getters: {
- //            user: ({ user }) => user,
- //            filterKey: ({ filterKey }) => filterKey,
- //            indexTab: ({ indexTab }) => indexTab,
- //        },
- //    },
     methods: {
         selectTab: function (num) {
             this.$store.dispatch('selectTab', num);
@@ -238,7 +227,7 @@ export default {
                 /* right: 10px; */
                 z-index: 222;
                 top: 0;
-            }
+        }
 	}
 }
 

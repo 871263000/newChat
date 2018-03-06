@@ -12,18 +12,31 @@ Vue.component('imgFd', function (resolve) {
   require(['./imgCat'], resolve)
 });
 
+Vue.component('MshowModal', function (resolve) {
+  // 这个特殊的 require 语法告诉 webpack
+  // 自动将编译后的代码分割成不同的块，
+  // 这些块将通过 Ajax 请求自动下载。
+  require(['./selectFriends'], resolve)
+});
+
 
 let scrollHeight = 0;
 
 export default {
 	data () {
 		return {
+            shareShow: false,
 			p: 1,
-			showModal: this.show,
 			messagesLog: [],
             scrollHeight: 0,
             showImg: false,
             imgfdBoxinfo: '',
+            forwardInfo: {
+                mouseLeftShow: false,
+                forwardContent: '',
+                forwardId: 0,
+                messageOfSelf: false
+            }
 		}
 	},
 	computed: mapState({
@@ -92,7 +105,6 @@ export default {
             if ( e.target.nodeName == 'IMG' ) {
                 let img = e.target.src;
                 // this.imgfdBoxinfo = img;
-                console.log(44433);
                 this.$emit('imgShow', img);
 
                 // this.showImg = true;
@@ -112,13 +124,57 @@ export default {
         },
         close () {
             this.$emit('close')
-        }
+        },
+        mouseLeft (e, content, id, self) {
+            let posiX = e.pageX;
+            let posiY = e.pageY;
+            this.forwardInfo.mouseLeftShow = true;
+            this.$nextTick(function () {
+                this.$refs.mouseLeft.style.top = (posiY + 2) + 'px';
+                this.$refs.mouseLeft.style.left = (posiX + 2) + 'px';
+            });
+            this.forwardInfo.forwardContent = content;
+            this.forwardInfo.forwardId = id;
+            this.forwardInfo.messageOfSelf = self;
+
+        },
+        forward (content) {
+            this.shareShow = true;
+            this.shareContent = content;
+            this.forwardInfo.mouseLeftShow = false;
+        },
+        share (selectedMan) {
+            let data = {};
+            for (let i in selectedMan) {
+                data.senderId = this.user.id;
+                data.name = selectedMan[i].name;
+                data.img = selectedMan[i].avatar;
+                data.type = selectedMan[i].type;
+                data.id =  selectedMan[i].id;
+                data.content = this.shareContent;
+                if ( data.content ) {
+                    this.$store.dispatch('batchSendMessage', data);
+                    alert('已分享！');
+                    return ;
+                }
+                alert('分享失败！');
+                return false;
+
+            }
+            
+        },
+
     },
 	created () {
+        document.addEventListener('click', (e)=> {
+            console.log(343);
+            this.forwardInfo.mouseLeftShow = false;
+        });
         this.$nextTick(function () {
            this.getMessage();
 
-        })
+        });
+
 	}
 }
 
@@ -149,6 +205,12 @@ Vue.directive('scroll-bottom', function(el) {
 <template>
 <div>
     <audio ref="audio"></audio>
+    <div class="mouseLeft" ref="mouseLeft" v-if="forwardInfo.mouseLeftShow">
+        <ul>
+            <li @click="revoke()" v-if="forwardInfo.messageOfSelf">撤回</li>
+            <li @click ="forward(forwardInfo.forwardContent)">转发</li>
+        </ul>
+    </div>
  <!-- img放大 -->
     <imgFd v-if="showImg" @close="showImg = false" :imgSrc="imgfdBoxinfo">
         <!-- <div slot="imgBody" v-html="imgfdBoxinfo"></div> -->
@@ -164,22 +226,21 @@ Vue.directive('scroll-bottom', function(el) {
 		            <p class="time">
 		                <span>{{ item.timestamp}}</span>
 		            </p>
-<!-- 		            <div class="main" :class="{ self: item.id == user.id  }">
-		                <img class="avatar" width="40" height="40" :src="item.id == user.id ? user.img : item.avatar" />
-		                <div class="text"  @click="imgFd($event)" v-html="content(item.content, self)"></div>
-		            </div> -->
 
                     <div class="main" :class="{ self: item.id == user.id }">
                         <img class="avatar" width="40" height="40" :src="item.id == user.id ? user.img : item.avatar" />
 
                         <div v-if="currentSessionType == 'groupMessage' && item.id != user.id" class="groupName">{{item.username}}</div>
 
-                        <div class="text" @click.stop="imgFd($event)" v-html="content(item.content, item.id == user.id)"></div>
+                        <div @contextmenu = "mouseLeft($event, item.content, item.id, item.self)"  v-oncontextmenu ="item.content" class="text" @click.stop="imgFd($event)" v-html="content(item.content, item.id == user.id)"></div>
                     </div>
 		        </li>
 		    </ul>
 		</div>
 	</asyncModal>
+        <MshowModal v-if="shareShow" @close="shareShow =false" @selectedMan="share" :group="true">
+        
+    </MshowModal>
 </div>
 </template>
 <style lang="less">
@@ -248,6 +309,22 @@ Vue.directive('scroll-bottom', function(el) {
         padding: 5px;
         overflow: auto;
         height: 400px;
+    }
+    .mouseLeft {
+        position: fixed;
+        z-index: 999999;
+        width: 100px;
+        background-color: #fff;
+        text-align: center;
+        box-shadow: 0px 0px 10px #3c3b3b;
+        cursor: pointer;
+        ul {
+            li {
+                padding: 10px;
+                border-bottom: 1px solid #ccc;
+                margin: 0;
+            }
+        }
     }
 }
 

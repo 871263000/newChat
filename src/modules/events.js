@@ -75,16 +75,8 @@ const actions = {
 		let name, sessionId,sessionName,img, sessionImg;
 
 		if ( data.mestype == 'message' ) {
-			sessionName = data.send_name;
-			name = data.send_name;
-			img =  data.card_image,
-			sessionImg = data.card_image,
 			sessionId = data.sender_id;
 		} else {
-			img = data.card_image,
-			sessionImg =  '/chat/images/ren.png',
-			sessionName = data.accept_name;
-			name = data.send_name;
 			sessionId = data.session_no;
 		}
 		let saveData = {
@@ -92,10 +84,7 @@ const actions = {
 			content: data.message_content,
 			senderId: data.sender_id,
 			dialogueId: sessionId,
-			sessionName: sessionName,
-			name: name,
-			sessionImg: sessionImg,
-			img: img,
+			senderId: data.sender_id,
 			type: data.mestype,
 			accept_id: data.to_uid,
 			sendCliend_id: data.accClient_id,
@@ -110,28 +99,27 @@ const actions = {
 		commit('SEND_MESSAGE', saveData);
 	},
 	resSayUid: ({ state, commit, rootState }, data) => {
-		let sessionImg, sessionName, name, img;
-		if ( data.mestype == 'message' ) {
-			sessionName = rootState.currentSession.name;
-			sessionImg = rootState.currentSession.img;
-			name = rootState.currentSession.name;
-			img = rootState.currentSession.img;
-		} else if ( data.mestype == 'groupMessage' ) {
-			sessionName =  rootState.currentSession.name;
-			sessionImg = '/chat/images/ren.png';
-			name = rootState.currentSession.name;
-			img = rootState.currentSession.img;
+		// let sessionImg, sessionName, name, img;
+		// if ( data.mestype == 'message' ) {
+		// 	sessionName = rootState.currentSession.name;
+		// 	sessionImg = rootState.currentSession.img;
+		// 	name = rootState.currentSession.name;
+		// 	img = rootState.currentSession.img;
+		// } else if ( data.mestype == 'groupMessage' ) {
+		// 	sessionName =  rootState.currentSession.name;
+		// 	sessionImg = '/chat/images/ren.png';
+		// 	name = rootState.currentSession.name;
+		// 	img = rootState.currentSession.img;
+		// }
+		if ( data.mestype == 'groupMessage' ) {
+			data.to_uid = data.session_no;
 		}
 		let sessionId = '';
 		let saveData = {
 			id: data.id,
 			content: data.message_content,
 			senderId: data.sender_id,
-			dialogueId: rootState.currentSession.id,
-			name: name,
-			sessionName: sessionName,
-			sessionImg: sessionImg,
-			img: img,
+			dialogueId: data.to_uid,
 			type: data.mestype,
 			sendCliend_id: data.accClient_id,
 			accClient_id: data.sendClient_id,
@@ -148,7 +136,7 @@ const actions = {
 	},
 	videoChat ({ state, commit, rootState }, data) {
 		state.videoChatShow = true;
-		state.videoChatInfo = data;
+		state.videoChatInfo = data;  
 
 	},
 	videoResAnswerRes ({ state, commit, rootState }, data) {
@@ -157,7 +145,10 @@ const actions = {
 	},
 	videoChatShowChange ({commit}) {
 		commit('VCSC');
-	}
+	},
+	revoke ({commit}, data) {
+		commit('REVOKE', data);
+	} 
 }
 const events = {
 	state,

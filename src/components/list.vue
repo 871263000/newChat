@@ -84,20 +84,26 @@ export default {
             }
         },
         swipe (evt) {
-            let el = evt.path[3];
-            const WIDTH = 80;
-            if ( evt.path[3].nodeName == 'LI' ) {
-                el = evt.path[3];
-            } else if ( evt.path[4].nodeName == 'LI' ) {
-                el = evt.path[4];
-            }
-            console.log(evt);
+            let el = evt.target;
+            let parentEl = el.parentNode;
+            let elLI = el;
+            const WIDTH = 180;
+            for (let i = 0; i < 6; i++) {
+                if ( parentEl.nodeName == 'LI' ) {
+                    elLI = parentEl;
+                    break;
+                } else {
+                    parentEl = parentEl.parentNode;
+                }
 
+            }
             let direction = evt.direction;
             if ( direction == 'Left' ) {
-                el.style.left = '-' +WIDTH + 'px';
+                elLI.style.left = '-' +WIDTH + 'px';
             } else if( direction == 'Right' ) {
-                el.style.left =  '0px';
+                elLI.style.left =  '0px';
+            } else {
+                elLI.style.left =  '0px';
             }
             // let elLeft = el.style.left;
             // let deltaX = evt.deltaX;
@@ -117,8 +123,13 @@ export default {
             
             // console.log(el);
         },
-        delzjlxr (index) {
+        delzjlxr (index, e) {
             this.$store.dispatch('delSession', index);
+            this.swipe(e);
+        },
+        signReaded (index, num, e) {
+             this.$store.dispatch('signReaded', {index: index, num: num});
+             this.swipe(e);
         } 
     },
     filters: {
@@ -138,8 +149,9 @@ export default {
                     return '【表情】';
                 }
                 return '【图片】';
-            });
-            content = content.replace(/<div.*\>/gi, function (v) {
+            })
+            .replace(/&lbrg/, '')
+            .replace(/<div.*\>/gi, function (v) {
                 return '【文件】';
             });
             return content;
@@ -265,14 +277,21 @@ Vue.directive('oncontextmenu', {
                     <div class="list-message" v-if="item.messages.length > 0">
                         <span class="list-message-name"  >{{item.messages[item.messages.length-1].self || item.type =='message'   ? '' : item.messages[item.messages.length-1].name + ':' }}</span>
 
-                        <span>{{item.messages[item.messages.length-1].content | content}}</span>
+                        <span v-if="!item.revokeState">{{ item.messages[item.messages.length-1].content | content }}</span>
+                        <span v-else>"已撤销"</span>
                     </div>
                 </div>
                 
             </div>
                 <span class="message-num" v-if="item.messageNum" >{{ item.messageNum }}</span>
-                <div class="list-del" @click.stop="delzjlxr(index)">
-                    <span>删除</span>
+                <div class="list-act-box">
+                    <div class="list-act-sign" @click.stop="signReaded(index, item.messageNum, $event)">
+                        <span v-if="item.messageNum">标记为已读</span>
+                        <span v-if="!item.messageNum">标记为未读</span>
+                    </div>
+                    <div class="list-act-del" @click.stop="delzjlxr(index, $event)">
+                        <span>删除</span>
+                    </div>
                 </div>
             </li>
         </ul>
@@ -385,20 +404,29 @@ Vue.directive('oncontextmenu', {
         }
 
     }
-    .list-del {
+    .list-act-box {
         position: absolute;
         top: 0;
-        right: -80px;
+        right: -190px;
         height: 100%;
         line-height: 60px;
         text-align: center;
         color: #fff;
-        width: 80px;
-        background-color: #d26d6d;
+        width: 185px;
+        .list-act-sign {
+            width: 100px;
+            display: inline-block;
+            background-color: #b9b1b1;
+        }
+        .list-act-del {
+            width: 80px;
+            display: inline-block;
+            background-color: #d26d6d;
+        }
     }
 }
 @media screen and (min-width: 500px) {
-    .list-del {
+     .list-act-box {
             display: none;
         }
     .chat-friend-list {
@@ -712,6 +740,10 @@ Vue.directive('oncontextmenu', {
                 overflow: hidden;
                 text-overflow: ellipsis;
                 white-space: nowrap;
+                span {
+                    display: inline-block;
+
+                }
             }
         }
     }
@@ -885,6 +917,10 @@ Vue.directive('oncontextmenu', {
                 overflow: hidden;
                 text-overflow: ellipsis;
                 white-space: nowrap;
+                span {
+                    display: inline-block;
+                    
+                }
             }
         }
     }

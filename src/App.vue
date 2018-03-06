@@ -116,13 +116,12 @@ export default {
         },
         videoChatInfo: (state) => {
             return state.events.videoChatInfo;
-        } 
+        }
 
     }),
     data () {
         return {
             chatMainShow: false,
-            iPhone: false,
             mainShow: false,
             dImgShow: false,
             imgSrc: '',
@@ -131,7 +130,8 @@ export default {
             videoChat: false,
             videoChatType:'',
             videochatIngInfo: {},
-            videoChatIngShow: false
+            videoChatIngShow: false,
+            iPhone: false
         }
     },
     mounted () {
@@ -154,13 +154,34 @@ export default {
             };
         }
         // 请求人员信息
-        this.$http.get('/static/omsIm/demo/json/json.js')
+        // let json = '/static/omsIm/demo/json/json.js';
+        let json = '/omsIm/demo/json/getList.php';
+
+        // let jsonMessage = '/static/omsIm/demo/json/jsonMessage.js?class=mesNum';
+        let jsonMessage = '/omsIm/demo/json/getList.php?class=mesNum';
+        
+        // let appPushMessage = '/static/omsIm/demo/json/jsonMessage.js?class=appPush&mesNum=';
+        let appPushMessage = '/omsIm/demo/json/getList.php?class=appPush&mesNum=';
+
+        this.$http.get(json)
             .then((response) => {
                 this.$store.dispatch('initData', response.data);
                 // 请求消息数量
-                this.$http.get('/static/omsIm/demo/json/jsonMessage.js?class=mesNum')
+                this.$http.get(jsonMessage)
                     .then((response) => {
+
                         this.$store.dispatch('acceptMes', response.data.reverse());
+                        // qpp 推送
+                        if (this.iPhone) {
+                            this.$http.get(appPushMessage + this.mesNum)
+                            .then((response) => {
+                            })
+                            .catch(function(response) {
+                                console.log(response)
+                            });
+                        }
+                        
+
                     })
                     .catch(function(response) {
                         console.log(response)
@@ -185,7 +206,6 @@ export default {
             if ( type == 'friendAdd' ) {
                 this.searchFriendShow = true;
             }
-            console.log(type);
         },
         controller (data) {
             if ( data.type == 'videoChat') {
@@ -243,6 +263,9 @@ img{
 *{
     -moz-box-sizing: border-box;  -webkit-box-sizing: border-box; -o-box-sizing: border-box; -ms-box-sizing: border-box; box-sizing: border-box;
 }
+a {
+     text-decoration:none;
+}
 </style>
 <style lang="less" scoped>
 @media screen and (max-width: 500px) {
@@ -263,7 +286,7 @@ img{
     .chat-min {
         position: fixed;
         z-index: 999999;
-        bottom: 28px;
+        bottom: 18px;
         left:28px;
     }
     .mesNum{

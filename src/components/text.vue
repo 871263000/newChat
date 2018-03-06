@@ -47,7 +47,8 @@ export default {
                 mediaRec: '',
                 src: '',
             },
-            sondShow: false
+            sondShow: false,
+            progressShow: false
         };
     },
     computed: mapState({
@@ -74,16 +75,18 @@ export default {
             }
         },
         send () {
-            let val = this.$refs.textarea.value;
-            if (!val) {
+
+            let val = this.$refs.textarea;
+            if (!val.value) {
                 return false;
             }
             let data = {
-                content: val
+                content: val.value
             };
-            val = '';
+            val.value = '';
             this.content = '';
             this.$store.dispatch('sendMessage', data);
+
         },
         // 发送方式
         changeSend (cur) {
@@ -123,6 +126,16 @@ export default {
                 if ( file.type.indexOf('quicktime') !== -1 ) {
                     name = file.name.replace('MOV', 'mp4');
                 }
+                this.progressShow = true;
+                let _this = this;
+                qn.on('progress', function (evt) {
+                    var percentComplete = Math.round(evt.loaded * 100 / evt.total);
+                    if (percentComplete != 100) {
+                        _this.$refs.runer.style.width = ( 100 - percentComplete).toString() + '%';
+                    } else {
+                        _this.progressShow = false;
+                    }
+                })
                 qn.Qiniu_upload({
                     key: '/file/'+userId+ '/' + start + '/'+ nowTime +'/'+ name ,
                     tokenurl: '/chat/uptoken.php',
@@ -142,6 +155,7 @@ export default {
                         }
                         vm.$store.dispatch('sendMessage', {content: cd.content});
                     } else {
+                        alert(data.err);
                     }
                 });
             }
@@ -180,10 +194,11 @@ export default {
                          return res;
                     }
                     var fileName = generateMixed(10);
-                    urlParam = 'putb64/' + baLength+'/' +fileName + '.png';
+                    urlParam = 'putb64/-1/' +fileName + '.png';
                     token = qn.getQiniuToken('/chat/uptoken.php', (token) =>{
                         this.uploadBase64(ba, token, urlParam,  (bar) =>{
                             // let img = '<img src="http://7xq4o9.com1.z0.glb.clouddn.com/'+bar.key+'">';
+                            console.log(bar.key);
                             this.sendImgSrcU = bar.key;
                             this.sendImgShow = true;
                         });
@@ -309,6 +324,7 @@ export default {
                 return (S4()+S4()+"-"+S4()+"-"+S4()+"-"+S4()+"-"+S4()+S4()+S4());
             }
             let qiniuUpload = function (file) {
+                
                 qn.Qiniu_upload({
                     key: '/voice/voicefile'+guid()+'.m4a',
                     tokenurl: '/chat/uptoken.php',
@@ -352,9 +368,15 @@ export default {
             }
         },
         inFocus () {
-            setTimeout("window.scrollTo(0, 1000)",200);
-            document.getElementsByTagName('body')[0].scrollIntoView();
-            document.activeElement.scrollIntoViewIfNeeded();
+            setTimeout("window.scrollTo(0, 10000);",1000);
+            if (this.emShow) {
+                this.emShow = !this.emShow;
+            };
+            if ( this.selShow ) {
+                this.selShow = !this.selShow;
+            };
+            // document.getElementsByTagName('body')[0].scrollIntoView();
+            // document.activeElement.scrollIntoViewIfNeeded();
         },
         messageImgFd (img) {
             this.$emit('enlarge', img);
@@ -363,49 +385,24 @@ export default {
             if (confirm('你确定要和他视频吗？')) {
                 this.$emit('route', {type: 'videoChat'});
             }
+        },
+        HeightAuto(e) {
+            let el = e.target;
+            let textHeight = el.scrollHeight;
+            const TBH = 50;
+            const TH = 70;
+            let tbe = this.$refs.textareaBox;
+
+            if ( textHeight < 190 && textHeight >= TH ) {
+                el.setAttribute('style', 'height:' + textHeight + 'px;overflow:auto;');
+                tbe.style.height = (TBH + textHeight - TH - 30) + 'px';
+            } else if (textHeight < TH ) {
+                el.setAttribute('style', 'height:70px;overflow:auto;');
+            }
+
         }
     },
     created () {
-
-            
-
-
-
-
-        // let session;
-        // let stream = new RTCat.Stream();
-
-        // stream.on("accepted", function () {
-
-        //     stream.play("local");
-        //     session = new RTCat.Session('27b4eb70-d5e8-42a1-9373-275af0218d3d');
-        //     session.on("connected", function () {
-        //             console.log(2222);
-        //         session.on('remote', function (receiver) {
-        //             console.log(45555);
-        //             receiver.on('stream',function(stream){
-        //                 console.log(444);
-        //                 remote_stream = stream;
-        //                 var div = document.createElement('div');
-        //                 div.setAttribute('id','video-'+receiver.getId());
-        //                 document.querySelector('body').appendChild(div);
-        //                 stream.play('video-'+receiver.getId());
-        //             });
-
-        //         }).on('in', function (token) {
-        //             // 建立连接成功后,发送 stream
-        //             session.sendTo({to:token,stream:stream})
-        //         });
-        //         session.on("out", function (token) {
-        //             console.log(token);
-        //         })
-
-        //         // 建立连接成功后,发送 stream
-        //         session.send({stream:stream});
-        //     });
-
-        //     session.connect();
-        // }).init();
         let isMobile = function(){
             let userAgentInfo = navigator.userAgent;
             let Agents = new Array("Android", "iPhone", "SymbianOS", "Windows Phone", "iPad", "iPod")
@@ -419,7 +416,21 @@ export default {
             this.iphoneText = true;
         }
         let data = localStorage.getItem('currentSel');
+        let _this = this;
         this.$nextTick( () => {
+            if ( this.iphoneText ) {
+                // document.getElementsByName('body')[0].addEventListener('touchend',function(e){
+                //     // 改变了事件名称，tap是在body上才被触发，而touchend是原生的事件，在dom本身上就会被捕获触发
+                //     e.preventDefault();
+                //     if (_this.emShow) {
+                //         _this.emShow = !_this.emShow;
+                //     };
+                //     if ( _this.selShow ) {
+                //         _this.selShow = !_this.selShow;
+                //     };
+                //     // 阻止“默认行为”
+                // })
+            }
             document.addEventListener('click', (e)=> {
                 if (this.emShow) {
                     this.emShow = !this.emShow;
@@ -433,6 +444,16 @@ export default {
         if ( data != null ) {
             this.currentSel = parseInt(data);
         };
+    },
+    watch: {
+        content (val) {
+            if ( val == '' && this.iphoneText ) {
+                let tbe = this.$refs.textareaBox;
+                let t = this.$refs.textarea;
+                tbe.style.height = '50px';
+                t.setAttribute('style', 'height:70px;overflow:auto;');
+            }
+        }
     }
 };
 </script>
@@ -440,6 +461,11 @@ export default {
 <template>
 <div class="text-box">
     <div id="media-list"></div>
+    <div class="progress" v-if="progressShow">
+        <span class="runer" ref="runer">
+            
+        </span>
+    </div>
     <div class="text"  v-if="start">
     <messagesLog :show="showMessageLog" @imgShow="messageImgFd" @close="showMessageLog = false" v-if="showMessageLog"></messagesLog>
     <sendImg v-if="sendImgShow" @close="sendImgShow = false" :src="sendImgSrcU">
@@ -495,10 +521,10 @@ export default {
                 <span v-if="false">松开结束</span>
             </div>
         </div>
-        <div class="textarea-box" v-show="!luyin">
+        <div class="textarea-box" v-show="!luyin" ref="textareaBox">
             <textarea placeholder="" v-if="!iphoneText" v-model="content" ref="textarea" @keydown.enter="onKeydown" @paste="pasteOver($event)" @drop="dropFile($event)"></textarea>
-            <textarea v-if="iphoneText" @focus="inFocus()" v-model="content" id="chat-input"  ref="textarea"  @keydown.enter="onKeydown" @paste="pasteOver()">
-                
+
+            <textarea v-if="iphoneText"  v-model="content"  @focus="inFocus()" id="chat-input"  ref="textarea"  @keydown.enter="onKeydown" @paste="pasteOver()" @input="HeightAuto($event)">
             </textarea>
             <!-- <input placeholder="" v-if="iphoneText" @focus="inFocus()" v-model="content" id="chat-input"  ref="textarea"  @keydown.enter="onKeydown" @paste="pasteOver()"> -->
             
@@ -531,7 +557,26 @@ export default {
 <style lang="less" scoped>
 
 
-
+.progress {
+    height: 6px;
+    width: 300px;
+    position: fixed;
+    top: 30%;
+    left: 50%;
+    z-index:99999;
+    margin-left: -150px;
+    background-color: #000;
+    box-shadow: inset 0 -2px 2px rgba(0, 0, 0, 0.4);
+    border-radius: 3px 3px;
+    .runer {
+        content: "";
+        position: absolute;
+        right: 0;
+        height: 100%;
+        width: 81%;
+        background-color: #fff;
+    }
+}
 
 @media screen and (max-width: 500px) {
 * {
@@ -613,12 +658,11 @@ export default {
     height: 0;background-color: #fff;
     // 表情包
     .emoticon {
-        position: fixed;
+        position: absolute;
         bottom: 100%;
         background-color: #fff;
         box-shadow: 0 0 10px #ccc;
         z-index: 999;
-        bottom: 50px;
         height: 200px;
         overflow: auto;
     }
@@ -643,7 +687,6 @@ export default {
     }
 }
 .text-box {
-    height: 50px;
     width: 100%;
     position: fixed;
     bottom: 0;
@@ -651,7 +694,6 @@ export default {
 }
 .text {
 
-    overflow: hidden;
     padding: 5px 0;
     height: 100%;
     flex-grow: 1;
@@ -696,7 +738,7 @@ export default {
     .press-to-speak-box {
        vertical-align: middle;
         padding: 4px 0px;
-        height: 100%;
+        height:0;
         flex-grow: 1;
         flex-basis: 200px;
         user-select: none;
@@ -711,7 +753,7 @@ export default {
         overflow: hidden;
         padding: 0 10px;
         width: 200%;
-        height: 200%;
+        height: 65px;
         color: #565656;
         border: 1px solid #7d7e83;
         transform: scale(.5);
@@ -724,13 +766,14 @@ export default {
         height: 100%;
         flex-grow: 1;
         flex-basis: 200px;
+        height: 50px;
     }
     #chat-input {
         outline: none;
         padding: 10px 0 0 0;
         border-radius: 6px;
         width: 200%;
-        height: 200%;
+        height: 70px;
         border: 1px solid #7d7e83;
         -webkit-transform: scale(.5);
         transform: scale(.5);

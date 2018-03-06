@@ -1,7 +1,7 @@
 <script>
 import Vue from 'vue';
-import { mapState } from 'vuex';
-import VueR from 'vue-resource';
+import { mapState } from 'vuex'
+import VueR from 'vue-resource'
 import VueQArt from 'vue-qart'
 Vue.use(VueR);
 Vue.use(VueQArt);
@@ -87,7 +87,7 @@ export default {
 			<ul>
 				<li  @click="showMessageLog = true"><span>聊天记录 </span><i class="iconfont-chat">&#xe6ce;</i></li>
 				<li @click="qrcodeShow = true"><span>二维码 </span><i class="iconfont-chat" >&#xe62b;</i></li>
-				<li><a :href="'http://' + userInfo.website.domain">私人定制网站<i class="iconfont-chat" >&#xe61a;</i></a></li>
+				<li v-if="userInfo.website"><a :href="'http://' + userInfo.website.domain">私人定制网站<i class="iconfont-chat" >&#xe61a;</i></a></li>
 			</ul>
 		</div>
 		<div class="send-message-box">

@@ -3,8 +3,8 @@ import Vue from 'vue';
 import { mapState } from 'vuex';
 import Vuex from 'vuex';
 import VueR from 'vue-resource';
-import alert from './plugin/alert';
-Vue.use(alert);
+// import alert from './plugin/alert';
+// Vue.use(alert);
 Vue.use(VueR);
 export default {
 	data () {
@@ -39,13 +39,13 @@ export default {
     		}
     		if ( p == 'a' ) {
     			// alert('已发送！');
-    			this.$alert('已发送', 'top');
+    			alert('已发送！');
     			this.show= false;
     			this.$store.dispatch('friendDel', this.applyerId);
     		} else if ( p == 'd' ) {
     			let pp = confirm('你确定要删除吗？');
     			if (pp) {
-    				this.$alert('已删除', 'top');
+    				alert('已删除！');
     				// this.show= false;
     				this.$store.dispatch('friendDel', this.applyerId);
     			}

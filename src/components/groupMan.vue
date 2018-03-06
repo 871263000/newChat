@@ -79,7 +79,7 @@ export default {
 	            });
         	};
         },
-        selectedMan (selectedMan, selectedId) {
+        selectedMan (selectedMan) {
         	let data = { class: 'addGrouper', data: selectedMan, session: this.currentSession.id };
             this.$http.post('/omsIm/demo/json/getList.php', data, {emulateJSON:true})
             .then(res=> {
@@ -112,7 +112,9 @@ export default {
 <!-- 手机 title -->
 <div class="person-info">
 <!-- 群增加人 -->
-	<addNewGrouper v-if="addNewGrouperShow" :id="this.currentSession.id" @close="addNewGrouperShow = false" @selectedMan="selectedMan"></addNewGrouper>
+	<addNewGrouper v-if="addNewGrouperShow" :id="this.currentSession.id" :group="false" @close="addNewGrouperShow = false" @selectedMan="selectedMan">
+		<div slot="header">选择你要增加的群员</div>
+	</addNewGrouper>
 	<messagesLog :show="showMessageLog" @imgShow="imgFd" @close="showMessageLog = false" v-if="showMessageLog"></messagesLog>
 	<div class="dialog-title" ref="chatDrop" v-chat-drop>
 	    <i class="backSession" @click="$emit('close')"></i>

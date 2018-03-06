@@ -21,50 +21,118 @@ export default {
             filterKey: ''
         };
     },
-    props: ['id'],
+    props: ['id', 'group'],
     computed: {
         selected () {
             let data = [];
-            if ( this.friends[0] ) {
-                this.friends[0].list.forEach(i => {
-                    if ( this.ids.indexOf(i.id) !== -1 ) {
-                        data.push(i);
-                    }
-                })
-            }
-            if ( this.friends[1] ) {
-                this.friends[1].list.forEach(i => {
-                    if ( this.ids.indexOf(i.id) !== -1 ) {
-                        data.push(i);
+            // console.log(data);
+            this.ids.forEach(i => {
+                console.log(i.index);
+                this.friends[i.index].list.forEach(y => {
+                    if ( i.id == y.id ) {
+                        if (i.type == 'm') {
+                            y.name = y.username;
+                            y.type = 'message';
+                        } else {
+                            y.name = y.groupname;
+                            y.type = 'groupMessage';
+                        }
+                        data.push(y);
                     }
                 });
-            }
-            
+            })
+            // if ( this.friends[0] ) {
+            //     this.friends[0].list.forEach(i => {
+            //         this.ids[0].forEach(y => {
+            //             if ( y.id == i.id ) {
+            //                 i.type = 'message';
+            //                 i.name = i.username;
+            //                 data.push(i);
+            //             }
+            //         });
+            //     })
+            // }
+            // if ( this.friends[1] ) {
+            //     this.friends[1].list.forEach(i => {
+            //         this.ids[1].forEach(y => {
+            //             if ( y.id == i.id ) {
+            //                 i.type = 'message';
+            //                 i.name = i.username;
+            //                 data.push(i);
+            //             }
+            //         });
+            //     })
+            // }
+            // if ( this.friends[2] ) {
+            //     this.friends[2].list.forEach(i => {
+            //         this.ids[2].forEach(y => {
+            //             if ( y.id == i.id ) {
+            //                 i.type = 'groupMessage';
+            //                 i.name = i.groupname;
+            //                 data.push(i);
+            //             }
+            //         });
+            //     });
+            // }
             return data;
 
         },
         ...mapState({
             friends (state)  {
                 let fFriends = [];
-                let ff = [{list: [], id:0, groupname: state.friends[1].groupname }, {list: [], id: 0, groupname: state.friends[2].groupname}];
+                let ff = [{list: [], type: 'm',id:0, groupname: state.friends[1].groupname }, {list: [], id: 0,  type: 'm', groupname: state.friends[2].groupname}];
                     ff[0].list = state.friends[1].list.filter((val) => {
                         return val.username.includes(this.filterKey);
                     });
                     ff[1].list = state.friends[2].list.filter((val) => {
                         return val.username.includes(this.filterKey);
                     });
+
+                    if ( this.group ) {
+                        ff.push({list: [], type: 'g', id: 0, groupname: '群'});
+                        ff[2].list = state.group;
+                        let omsId = 'all' + state.user.omsId;
+                        ff[2].list.unshift({'groupname': '全员群', 'id': omsId, avatar: '/chat/images/ren.png'});
+                    }
                 return ff;
-            },
+            }
+
         })
+        
     },
     methods: {
-        addId (ids, oldIds) {
-            let index  = 0;
-            oldIds.forEach(id => {
-                index = this.ids.indexOf(id);
-                this.ids.splice(index, 1);
-            });
-            this.ids.push.apply(this.ids, ids);
+        addId (ids, index) {
+            // this.ids = [{id: 1, indx: 0, 'type': 'm'}, {id: 2, indx: 0, 'type': 'm'}, {id: 4, indx: 0, 'type': 'm'}, {id: 3, indx: 0, 'type': 'm'}];
+            let newIds = [];
+            for (var i = 0; i < this.ids.length; i++) {
+                if ( this.ids[i].index != index ) {
+                    newIds.push(this.ids[i]);
+                }
+            }
+            newIds.push.apply(newIds, ids);
+            this.ids = newIds;
+
+
+            // let index  = 0;
+            // for (var i = 0; i < ids.length; i++) {
+            //     if (ids[i].type == 'm') {
+            //         index = this.ids.indexOf(ids[i].id);
+            //         if (index== -1) {
+            //             this.ids.push(ids[i].id);
+            //         }
+            //     } else {
+            //         if (this.gIds.indexOf(ids[i].id) == -1) {
+            //             this.gIds.push(ids[i].id);
+            //         }
+            //     }
+            // }
+            // console.log(this.ids);
+            
+            // oldIds.forEach(id => {                                                                                                                                                                                                                              
+            //     index = this.ids.indexOf(id);
+            //     this.ids.splice(index, 1);
+            // });
+            // this.ids.push.apply(this.ids, ids);
         },
         close () {
             this.$emit('close');
@@ -74,7 +142,7 @@ export default {
                 alert('还没有选择人！');
                 return false;
             }
-            this.$emit('selectedMan', this.selected, this.ids);
+            this.$emit('selectedMan', this.selected);
             
             this.$emit('close');
         }
@@ -85,7 +153,7 @@ export default {
 <template>
     <selectModel @close="close()">
         <div slot="header">
-            选择你要转发的人员
+            请选择人员
         </div>
         <div class="add-grouper" slot="body">
             <div class="add-grouper-left">
@@ -95,7 +163,7 @@ export default {
                 <div class="add-grouper-left-list">
                     <ul class="friend-list list-item">
                         <li v-for="(item,index) in friends" class="chat-friend-list" >
-                            <add-grouper :item="item" @addIds="addId" :index="index"></add-grouper>
+                            <add-grouper :item="item" @addIds="addId" :type="'m'" :index="index"></add-grouper>
                             <!-- <img class="avatar"  width="30" height="30" >
                             <p class="name">{{'测试'}}</p> -->
                         </li>
@@ -108,7 +176,7 @@ export default {
                         <li v-for="item in selected">
                             <!-- <input type="checkbox" :value="item.id" v-model="ids"> -->
                             <img :src="item.avatar">
-                            <p>{{ item.username }}</p>
+                            <p>{{ item.name }}</p>
                         </li>
                     </ul>
                 </div>
@@ -161,6 +229,7 @@ export default {
     }
     .add-ok {
             text-align: center;
+            cursor: pointer;
             margin: 20px;
             span {
                 color: #fff;
@@ -232,6 +301,7 @@ export default {
     .add-ok {
             text-align: center;
             margin: 20px;
+            cursor: pointer;
             span {
                 color: #fff;
             background-color: #286090;

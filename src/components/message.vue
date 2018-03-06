@@ -11,6 +11,7 @@ Vue.use(AlloyFingerVue, {
   AlloyFinger
 });
 
+let G_SHOW = false;
 
 Vue.component('messagesLog', function (resolve) {
   // 这个特殊的 require 语法告诉 webpack
@@ -25,7 +26,7 @@ Vue.component('messagesLog', function (resolve) {
 Vue.component('persInfo', function (resolve) {
     require(['./persInfo'], resolve);
 });
-// 个人信息
+// 群信息
 
 Vue.component('groupMan', function (resolve) {
     require(['./groupMan'], resolve);
@@ -38,6 +39,9 @@ Vue.component('shareModel', function (resolve) {
   require(['./selectFriends'], resolve)
 });
 
+
+
+
 export default {
     data () {
         return {
@@ -49,11 +53,17 @@ export default {
             shareShow: false,
             shareContent: '',
             playComplete: false,
+            forwardInfo: {
+                mouseLeftShow: false,
+                forwardContent: '',
+                forwardId: 0,
+                messageOfSelf: false
+            }
         }
     },
     computed:  mapState({
         user: (state) => state.user,
-        session: (state) => state.sessions.find(session => session.id === state.currentSession.id && session.type == state.currentSessionType),
+        session: (state) => state.sessions.find(session => session.id == state.currentSession.id && session.type == state.currentSessionType),
         dialogName: (state) => {
             return state.currentSession.name;
         },
@@ -80,7 +90,6 @@ export default {
     methods: {
         content ( content, self ) {
             if ( content.indexOf('-voice-[') !== -1 ) {
-
                content =  content.replace(/-(voice)-\[(.*?)\]/g, function (f, i, z) {
                   let m = '';
                   let zArr = z.split('|');
@@ -124,6 +133,8 @@ export default {
                 
 
             }
+            e.currentTarget.parentNode.childNodes[0].style.display = 'none'
+             G_SHOW = false;
             // console.log(e.target.nodeName);
             // console.log(e.target);
         },
@@ -137,11 +148,7 @@ export default {
                 //     alert('全体人员的群！');
                 //     return false;
                 // }
-                this.$nextTick(() => {
-                    document.addEventListener('click', (e)=> {
-                        this.groupManShow = false;
-                    });
-                })
+                
                 this.groupManShow = !this.groupManShow;
                 return false;
             } else {
@@ -163,13 +170,31 @@ export default {
             if ( e.which == 3 ) {
             };
         },
-        share (selectedMan, selectedId) {
+        mouseLeft (e, content, id, self) {
+            let posiX = e.pageX;
+            let posiY = e.pageY;
+            this.forwardInfo.mouseLeftShow = true;
+            this.$nextTick(function () {
+                this.$refs.mouseLeft.style.top = (posiY + 2) + 'px';
+                this.$refs.mouseLeft.style.left = (posiX + 2) + 'px';
+            });
+            this.forwardInfo.forwardContent = content;
+            this.forwardInfo.forwardId = id;
+            this.forwardInfo.messageOfSelf = self;
+            G_SHOW = true;
+
+        },
+        revoke () {
+            this.$store.dispatch('revokeSend', this.forwardInfo.forwardId);
+
+        },
+        share (selectedMan) {
             let data = {};
             for (let i in selectedMan) {
                 data.senderId = this.user.id;
-                data.name = selectedMan[i].username;
+                data.name = selectedMan[i].name;
                 data.img = selectedMan[i].avatar;
-                data.type = 'message';
+                data.type = selectedMan[i].type;
                 data.id =  selectedMan[i].id;
                 data.content = this.shareContent;
                 if ( data.content ) {
@@ -184,15 +209,53 @@ export default {
             
         },
         longTop (evt) {
-            console.log(evt.target.getAttribute('data-content'));
+            let el = evt.target;
+            let parentEl = el.parentNode;
+
+            for (let i = 0; i < 6; i++) {
+                if ( parentEl.getAttribute('class') == 'content-box' ) {
+                    
+                    if ( parentEl.children[0].style.display == 'none' || parentEl.children[0].style.display == '' ) {
+                        parentEl.children[0].style.display = 'block'
+                    } else {
+                        parentEl.children[0].style.display = 'none'
+                    }
+                    break;
+                } else {
+                    parentEl =  parentEl.parentNode;
+                }
+            }
+            evt.stopPropagation();
+            G_SHOW = true;
+            // evt.target.getAttribute('data-content');
+
             // $event.appendChild($event);
             // console.log($event);
         },
         messageImgFd (img) {
              this.$emit('enlarge', img);
+        },
+        contentAct ( content, e) {
+            let el = e.currentTarget;
+            if ( el.children[0].style.display == 'none' || el.children[0].style.display == '' ) {
+                el.children[0].style.display = 'block'
+            } else {
+                el.children[0].style.display = 'none'
+            }
+        },
+        forward (content) {
+            this.shareShow = true;
+            this.shareContent = content;
         }
 
     },
+    created () {
+        document.addEventListener('click', (e)=> {
+            this.groupManShow = false;
+            this.forwardInfo.mouseLeftShow = false;
+            G_SHOW = false;
+        });
+    }
 }
 Vue.directive('chat-drop', {
     bind: function (elm) {
@@ -217,7 +280,7 @@ Vue.directive('chat-drop', {
     }
 });
 
-Vue.directive('scroll-bottom', function(el) {
+Vue.directive('scroll-bottom', function(el, bind) {
     Vue.nextTick(() => {
             let allImg = el.getElementsByTagName('img');
             let imgLength = 0;
@@ -237,6 +300,9 @@ Vue.directive('scroll-bottom', function(el) {
                 }
 
             }
+            if ( G_SHOW ) {
+                return false;
+            }
             el.scrollTop = el.scrollHeight - el.clientHeight;
     });
 })
@@ -246,7 +312,7 @@ Vue.directive('scroll-bottom', function(el) {
 <div class="message">
     <audio ref="audio"></audio>
     <!-- 分享 -->
-    <shareModel @selectedMan="share" v-if="shareShow" @close="shareShow =false"></shareModel>
+    <shareModel @selectedMan="share" :group="true" v-if="shareShow" @close="shareShow =false"></shareModel>
 <!-- 群里的人 -->
     <transition name="slide-groupMan">
         <div class="groupMan"  v-if="groupManShow">
@@ -258,7 +324,12 @@ Vue.directive('scroll-bottom', function(el) {
 
 <!-- 聊天信息 -->
     <messagesLog :show="showMessageLog" @imgShow="messageImgFd" @close="showMessageLog = false" v-if="showMessageLog"></messagesLog>
-
+    <div class="mouseLeft" ref="mouseLeft" v-if="forwardInfo.mouseLeftShow">
+        <ul>
+            <li @click="revoke()" v-if="forwardInfo.messageOfSelf">撤回</li>
+            <li @click ="forward(forwardInfo.forwardContent)">转发</li>
+        </ul>
+    </div>
     <!-- 手机 title -->
     <div class="dialog-title" v-chat-drop>
         <i class="backSession" @click="clearSession()"></i>
@@ -268,7 +339,7 @@ Vue.directive('scroll-bottom', function(el) {
         <i class=""class="iconfont-chat man-info" @click.stop="userInfo()" v-if="dialogName">&#xe686;</i>
     </div>
     <!--聊天信息 -->
-    <ul v-if="session" v-scroll-bottom="session.messages">
+    <ul v-if="session" v-scroll-bottom="showMessageLog">
         <li v-if="session.messages.length > 20" @click="showMessageLog = true" class="catMul">查看更多</li>
         <li v-for="item in session.messages">
             <p class="time">
@@ -277,7 +348,25 @@ Vue.directive('scroll-bottom', function(el) {
             <div class="main" :class="{ self: item.self }">
                 <img class="avatar" width="40" height="40" :src="item.self ? user.img : item.img" @click="appoint(item.name)" />
                 <div v-if="dialogType == 'groupMessage' && !item.self" class="groupName">{{item.name}}</div>
-                <div class="text" @mousedown.3="mousedown($event, content(item.content))" @click="sendType($event)" :data-content="item.content" v-finger:long-tap="longTop" v-oncontextmenu="item.content" v-html="content(item.content, item.self)"></div>
+                
+                <div class="content-box" :data-content="item.content">
+                    <div :class="{'content-act': true, 'content-act-right': !item.self, 'content-act-left': item.self}" >
+                        <div :class="{'content-act-list': true, 'content-box-d': item.self}">
+                            <ul>
+                                <li @click="revoke()" v-if="item.self">撤回</li>
+                                <li @click.stop="forward(item.content)"><span>转发</span></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div v-if="!item.revokeState" class="text" @contextmenu = "mouseLeft($event, item.content, item.id, item.self)"  @click="sendType($event)"  v-finger:long-tap="longTop" v-oncontextmenu ="item.content" v-html="content(item.content, item.self)">
+                        
+                    </div>
+                    <div v-else class="messageRevoke">
+                        
+                        {{item.self ? '你撤销了一条消息' : item.name + '撤销了一条消息'}}
+                    </div>
+                </div>
             </div>
         </li>
     </ul>
@@ -354,11 +443,73 @@ Vue.directive('scroll-bottom', function(el) {
 
 </style>
 <style lang="less" scoped>
-
+.messageRevoke {
+    text-align: center;
+    color: #6b6969;
+}
 
 
 @media screen and (max-width: 500px) {
 
+
+.mouseLeft {
+    display: none;
+}
+.content-box-d {
+    width: 100px !important;
+}
+.content-box {
+    position: relative;
+    .content-act-left{
+        left: 10px !important;
+        right: inherit !important;
+         .content-act-list {
+            left: 100%;
+            right: inherit !important;
+            margin-left: 13px;
+         }
+    }
+    .content-act {
+        cursor: pointer;
+        display: none;
+        position: absolute;
+        right: 10px;
+        top: 5px;
+        z-index: 999;
+        box-shadow: 0 0 10px #ccc;
+
+        .content-act-list {
+            position: absolute;
+            width: 200px;
+            height: 35px;
+            right: 100%;
+            top: -7px;
+            margin-right: 13px;
+            background-color: #fff;
+            background-color: #000;
+            color: #fff;
+            ul {
+                height: 100%;
+                top: 0;
+                li {
+                    float: left;
+                    height: 100%;
+                    margin: 0;
+                    padding: 10px;
+                    border-right: 1px solid #ccc;
+                    width: 100px;
+                    text-align: center;
+                }
+            }
+        }
+        i {
+            font-size: 21px;
+            color: #000;
+            border-radius: 10px;
+            background-color: #fff;
+        }
+    }
+}
 .dialog-title {
     height: 45px;
     border-bottom: 1px solid #ccc;
@@ -507,12 +658,80 @@ Vue.directive('scroll-bottom', function(el) {
         overflow: auto;
         
     }
+    .mouseLeft {
+        position: fixed;
+        z-index: 99;
+        width: 100px;
+        background-color: #fff;
+        text-align: center;
+        box-shadow: 0px 0px 10px #3c3b3b;
+        cursor: pointer;
+        ul {
+            li {
+                padding: 10px;
+                border-bottom: 1px solid #ccc;
+                margin: 0;
+            }
+        }
+    }
 .slide-groupMan-enter, .slide-groupMan-leave{
     -webkit-transition: all 1;
     transition: all 1;
     translateY: (8);
     opacity: 0;
 
+}
+.content-box {
+    position: relative;
+    .content-act-left{
+        left: 10px !important;
+        right: inherit !important;
+         .content-act-list {
+            left: 100%;
+            right: inherit !important;
+            margin-left: 13px;
+         }
+    }
+    .content-act {
+        cursor: pointer;
+        display: none;
+        position: absolute;
+        right: 10px;
+        top: 5px;
+        z-index: 999;
+        box-shadow: 0 0 10px #ccc;
+
+        .content-act-list {
+            position: absolute;
+            width: 100px;
+            height: 35px;
+            right: 100%;
+            top: -7px;
+            margin-right: 13px;
+            background-color: #fff;
+            display: none;
+            background-color: #000;
+            color: #fff;
+            ul {
+                height: 100%;
+                li {
+                    float: left;
+                    height: 100%;
+                    margin: 0;
+                    padding: 10px;
+                    border-right: 1px solid #ccc;
+                    width: 100%;
+                    text-align: center;
+                }
+            }
+        }
+        i {
+            font-size: 21px;
+            color: #000;
+            border-radius: 10px;
+            background-color: #fff;
+        }
+    }
 }
 
 .dialog-title {

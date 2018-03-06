@@ -75,6 +75,7 @@ const store = new Vuex.Store({
                 };
                 return flag;
             }();
+
             if(isMobile){
                 state.iPhone = true;
             }
@@ -113,7 +114,8 @@ const store = new Vuex.Store({
             };
         },
         // 收到消息
-        SEND_MESSAGE ({sessions, currentSession, user, friends, currentSessionType }, data) {
+        SEND_MESSAGE ({sessions, currentSession, user, friends, currentSessionType, group }, data) {
+            // 消息对方没有接受
             if (data.code == 0) {
                 if ( data.type == 'groupMessage' ) {
                     sessions.forEach((item, index)=> {
@@ -125,36 +127,16 @@ const store = new Vuex.Store({
                 alert(data.msg);
                 return false;
             }
-
             // 记录日志
             // let errorLog = {"t": 0, "data": data, "user": user.id};
-            let errorLog = data;
-            errorLog.t = 0;
-            errorLog.user = user.id;
+            // let errorLog = data;
+            // errorLog.t = 0;
+            // errorLog.user = user.id;
 
 
             
-            if ( data.type == 'message' && data.accept_id != user.id &&  data.senderId != user.id) {
-                errorLog.t = 1;
-                axios({
-                  url: '/omsIm/demo/json/errorLog.php',
-                  method: 'post',
-                  data: errorLog,
-                  transformRequest: [function (data) {
-                    // Do whatever you want to transform the data
-                    let ret = ''
-                    for (let it in data) {
-                      ret += encodeURIComponent(it) + '=' + encodeURIComponent(data[it]) + '&'
-                    }
-                    return ret
-                  }],
-                  headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                  }
-                })
-                return ;
-            }
-            // if ( data.senderId != user.id ) {
+            // if ( data.type == 'message' && data.accept_id != user.id &&  data.senderId != user.id) {
+            //     errorLog.t = 1;
             //     axios({
             //       url: '/omsIm/demo/json/errorLog.php',
             //       method: 'post',
@@ -171,19 +153,8 @@ const store = new Vuex.Store({
             //         'Content-Type': 'application/x-www-form-urlencoded'
             //       }
             //     })
-            //     // let param = new URLSearchParams();
-            //     // param.append('data',JSON.stringify(errorLog));
-            //     // this.$http.post('/omsIm/demo/json/getList.php', errorLog, {emulateJSON:true})
-            //     // axios.post('/omsIm/demo/json/errorLog.php', {params: errorLog}, {emulateJSON:true})
-            //     //   .then(function (response) {
-            //     //   })
-            //     //   .catch(function (error) {
-            //     //     console.log(error);
-            //     //   });
+            //     return ;
             // }
-
-
-            
 // 记录日志end
             let saveMessage = {};
             let session = sessions.find(item => item.id == data.dialogueId && item.type === data.type );
@@ -194,7 +165,8 @@ const store = new Vuex.Store({
                     content: data.content,
                     date: new Date(),
                     self: true,
-                    accept_id: data.accept_id
+                    accept_id: data.accept_id,
+                    revokeState: data.revokeState
                 }
             } else {
                 let date = '';
@@ -203,23 +175,36 @@ const store = new Vuex.Store({
                 }
                 saveMessage = {
                     id: data.id,
-                    name: data.name, 
-                    img: data.img,
                     content: data.content,
                     date: date || new Date(),
-                    accept_id: data.accept_id
+                    accept_id: data.accept_id,
+                    revokeState: data.revokeState
                 }
             }
             // 会话列表里有
             if ( session ) {
                 // 发送者 和 聊天人 不是同一人
-                if ( data.dialogueId != currentSession.id ) {
+                if ( data.dialogueId != currentSession.id && data.senderId != user.id ) {
                     session.messageNum++;
                 };
-                // 消息只能保存十条
+                // 消息只能保存二十条
                 if ( session.messages.length > 20 ) {
                     session.messages.shift();
                 };
+                
+                saveMessage.img = session.user.img;
+                saveMessage.name = session.user.name;
+                if ( data.type == 'groupMessage' ) {
+                    let f;
+                    let fringd1 = friends[1].list.find((items) => items.id == data.senderId);
+                    if ( !fringd1 ) {
+                        f = friends[2].list.find((items) => items.id == data.senderId);
+                    } else {
+                        f = fringd1;
+                    }
+                    saveMessage.name = f.username;
+                    saveMessage.img = f.avatar;
+                }
                 session.messages.push(saveMessage);
                 // 消息置顶
                 let index = 0;
@@ -234,28 +219,51 @@ const store = new Vuex.Store({
                 }
                  // 会话列表里没有
             } else {
+                let fg = {}; // 找到这个 id 对应的 信息
+                if ( data.type != 'groupMessage' ) {
+                    console.log(data.dialogueId);
+                    let fringd1 = friends[1].list.find((items) => items.id == data.dialogueId);
+                    if ( !fringd1 ) {
+                        fg = friends[2].list.find((items) => items.id == data.dialogueId);
+                    } else {
+                        fg = fringd1;
+                    }
+                    fg.name = fg.username;
+                    saveMessage.name = fg.username;
+                    saveMessage.img = fg.avatar;
+                } else {
+                    let f = '';
+                    console.log(data.dialogueId);
+                    fg = group.find(items => items.id == data.dialogueId);
+                    fg.name = fg.groupname;
+
+                    let fringd1 = friends[1].list.find((items) => items.id == data.senderId);
+                    if ( !fringd1 ) {
+                        f = friends[2].list.find((items) => items.id == data.senderId);
+                    } else {
+                        f = fringd1;
+                    }
+
+                    saveMessage.name = f.username;
+                    saveMessage.img = f.avatar;
+
+                }
                 session = {
                     id: data.dialogueId,
                     user: {   
-                        name: data.sessionName, 
-                        img: data.sessionImg
+                        name: fg.name, 
+                        img: fg.avatar
                     },
                     messageNum: 0,
                     type: data.type,
                     messages: []
                 }
-                if ( data.dialogueId != currentSession.id ) {
+                if ( data.dialogueId != currentSession.id  && data.senderId != user.id) {
                     session.messageNum++;
                 };
                 session.messages.push(saveMessage);
                 sessions.unshift(session);
             }
-            // console.log(data);
-
-            // console.log(Vue.$http);
-            // Vue.$http.post('/omsIm/demo/json/errorLog.php', errorLog, {emulateJSON:true}).then(res=> {
-                 
-            // });
             // if ( session && session.messageNum != 0 ) {
             //     Websocket.sendMessage({"type":"mes_close", "to_uid":data.id,  "session_no": data.id, "message_type": data.type});
             // };
@@ -287,6 +295,13 @@ const store = new Vuex.Store({
         // },
         DELSESSION (state, index) {
             state.sessions.splice(index,1);
+        },
+        SIGNREADED (state, data) {
+            if ( data.num ) {
+                state.sessions[data.index].messageNum = 0;
+            } else {
+                state.sessions[data.index].messageNum = 1;
+            }
         },
         // 选择 tab
         SELECT_TAB (state, index) {
@@ -321,6 +336,27 @@ const store = new Vuex.Store({
                     break;
                 }
             }
+        },
+        REVOKE_SEND (state, messageId) {
+            let sendMessage = {'type': 'revoke', 'messageId': messageId};
+            Websocket.sendMessage(sendMessage);
+        },
+        REVOKE (state, data) {
+           state.sessions.forEach((items, i) => {
+                let find = false;
+                items.messages.forEach((item, y) => {
+                    if ( item.id == data.message_id ) {
+                        console.log(item);
+                        find = true;
+                        item.content = '已撤销';
+                        item.revokeState = 1;
+                        return ;
+                    }
+                });
+                if ( find ) {
+                    return ;
+                }
+            });
         }
         // 加载完成
         // COMPLETE (state, tf) {
@@ -370,9 +406,7 @@ const store = new Vuex.Store({
             let sendMessage;
 
             // 转换内容 
-
             sendMessage = {type:"sayUid", to_uid: data.id, groupId: 0, accept_name: data.name, message_type: data.type, mes_types: 'text', content: data.content  };
-            // console.log(sendMessage);return;
             if ( data.type != 'message'  ) {
                 sendMessage.session_no = data.id;
             };
@@ -387,16 +421,8 @@ const store = new Vuex.Store({
                 data.forEach(function ( d ) {
                     // return;
                     if ( d.message_type == 'message' ) {
-                        sessionName = d.sender_name;
-                        name = d.sender_name;
-                        img =  d.chat_header_img,
-                        sessionImg = d.chat_header_img,
                         sessionId = d.sender_id;
                     } else {
-                        img = d.chat_header_img,
-                        sessionImg =  '/chat/images/ren.png',
-                        sessionName = d.accept_name;
-                        name = d.sender_name;
                         sessionId = d.session_no;
                     }
                     // state.sessions.forEach(function () {
@@ -408,6 +434,7 @@ const store = new Vuex.Store({
                     if ( session ) {
                         let sessionSave = session.messages.find(item=>item.id == d.id);
                         if (sessionSave) {
+                            sessionSave.revokeState = d.revokeState;
                             return false;
                         }
                     }
@@ -416,13 +443,10 @@ const store = new Vuex.Store({
                         content: d.message_content,
                         senderId: d.sender_id,
                         dialogueId: sessionId,
-                        name: name,
-                        sessionName: sessionName,
-                        sessionImg: sessionImg,
-                        img: img,
                         type: d.message_type,
                         date: d.create_time,
                         accept_id: d.accept_id,
+                        revokeState: d.revokeState,
                         acceptMode: 'h'
 
                     };
@@ -439,12 +463,16 @@ const store = new Vuex.Store({
         delSession: ({ commit }, index) => {
             commit('DELSESSION', index);
         },
+        signReaded: ({ commit }, data) => {
+            commit('SIGNREADED', data);
+        },
         selectTab: ({ commit }, id) => commit('SELECT_TAB', id),
         search: ({ commit }, value) => commit('SET_FILTER_KEY', value),
         userSet: ({commit}, key, value) => commit('USER_SET', key, value),
         clearSession: ({commit}) => commit('CLEAR_SESSION'),
         friendDel: ({commit}, uid) => commit('FRIEND_DEL', uid),
         friendsStateChange: ({commit}, uid) => commit('FRIENDS_STATE_CHANGE', uid),
+        revokeSend: ({commit}, messageId) => commit('REVOKE_SEND', messageId)
     },
     modules: {
         events,
